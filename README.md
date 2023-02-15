@@ -3,6 +3,8 @@ This is repositary based on Real-CuGAN (https://github.com/bilibili/ailab/tree/m
 I implement it in TensorRT version and utilized a frame division algorithm to accelerate it (with a momentum mechanism). Plus, use FFMPEG to decode a smaller FPS for faster processing. Plus, multiprocessing and multithreading.
 Feel free to look at this document (https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p) for the implementation and algorithm I have used
 
+If you like it, you can give me a star if you like. Feel free to report any problem to me.
+
 
 # Install (Windows)：
 1. install cuda (11.7, Mine)
@@ -41,3 +43,5 @@ Feel free to look at this document (https://docs.google.com/presentation/d/1Gxux
 1. the sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
 2. My code is edited from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
 3. Provide all repository in English.
+4. Ubuntu setup for TensorRT (not yet tested)
+5. 
