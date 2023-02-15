@@ -1,6 +1,7 @@
 # AVSRR
-This is repositary based on Real-CuGAN (). 
-I implement it in TensorRT version and an frame division algorithm to accelerate it.
+This is repositary based on Real-CuGAN (https://github.com/bilibili/ailab/tree/main/Real-CUGAN). 
+I implement it in TensorRT version and utilized a frame division algorithm to accelerate it (with a momentum mechanism). Plus, use FFMPEG to decode a smaller FPS for faster processing. Plus, multiprocessing and multithreading.
+Feel free to look at this document (https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p) for the implementation and algorithm I have used
 
 
 # Install (Windows)：
@@ -28,7 +29,6 @@ I implement it in TensorRT version and an frame division algorithm to accelerate
 5. run "python mass_production.py" to process all videos inside a folder (needed to edit input_dir && store_dir)
    run "python main.py" to process just one single file (edit input and output directory in config.py by inp_path && store_dir) [This mode doesn't use any multiprocessing, so it's much slower than mass_production.py]
 
-Fell free to look at this document (https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p) for the implementation and algorithm I have used
     
 
 
@@ -40,3 +40,4 @@ Fell free to look at this document (https://docs.google.com/presentation/d/1Gxux
 # Disclaimer:
 1. the sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
 2. My code is edited from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
+3. Provide all repository in English.
