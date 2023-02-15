@@ -1,0 +1,12 @@
+Real_CuGAN/__pycache__/
+__pycache__/
+tmp/
+*.pyc
+.idea/
+*.png
+*.mp4
+*.pth
+weights/*
+
+
+*.*.pyc
