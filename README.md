@@ -21,7 +21,7 @@ I implement it in TensorRT version and an frame division algorithm to accelerate
 
 
 # Run:
-1. download cunet weight and name it as "cunet_weight.pth" and put it under the folder "weights/"
+1. download cunet weight (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/Changelog_CN.md) and name it as "cunet_weight.pth" and put it under the folder "weights/" (you will need to first make the directory "weights")
 2. generate weights first by edit your desired Low Resolution input size (lr_h, lr_width) in weight_generation/weight_generator.py in main()
 3. run "python weight_generation/weight_generator.py" (Currently no argument is needed)
 4. edit config.py, especially: process_num, full_model_num, nt  (try to set them based on your gpu power)
@@ -37,4 +37,6 @@ Fell free to look at this document (https://docs.google.com/presentation/d/1Gxux
 2. directly generate weights from main.py and mass_production.py while running for the first time
 
 
-
+# Disclaimer:
+1. the sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
+2. My code is edited from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
