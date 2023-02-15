@@ -37,11 +37,11 @@ If you like it, you can give me a star if you like. Feel free to report any prob
 # Future Works:
 1. use just one file to run any cases (either a folder or just one single video)
 2. directly generate weights from main.py and mass_production.py while running for the first time
+3. Provide all repository in English.
+4. Ubuntu setup for TensorRT (not yet tested)
 
 
 # Disclaimer:
 1. the sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
 2. My code is edited from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
-3. Provide all repository in English.
-4. Ubuntu setup for TensorRT (not yet tested)
-5. 
+
