@@ -1,4 +1,4 @@
-# AVSRR
+# AVSRR (Anime Video Super Resolution and Restoration)
 This is repositary based on Real-CuGAN (https://github.com/bilibili/ailab/tree/main/Real-CUGAN). 
 I implement it in TensorRT version and utilized a frame division algorithm to accelerate it (with a momentum mechanism). Plus, use FFMPEG to decode a smaller FPS for faster processing. Plus, multiprocessing and multithreading.
 Feel free to look at this document (https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p) for the implementation and algorithm I have used
