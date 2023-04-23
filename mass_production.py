@@ -5,7 +5,7 @@ import torch
 # 上面三个不按照这个顺序就会有bug(主要是环境的bug)
 import os, time, argparse
 from config import configuration
-from parallel import parallel_process
+from single_process import parallel_process
 
 
 accepted_format = ["mp4", "mkv"]
@@ -19,7 +19,17 @@ def check_existence(dir, create=False):
             os.mkdir(dir)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('--extract_subtitle', action='store_true')
+
+    global args
+    args = parser.parse_args()
+
+
 def mass_process(input_folder_dir, output_dir_parent):
+    parse_args()
+    
     check_existence(input_folder_dir)
     check_existence(output_dir_parent, create=True)
 
@@ -50,19 +60,4 @@ def mass_process(input_folder_dir, output_dir_parent):
         time.sleep(5)
     os._exit(0)
         
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--extract_subtitle', action='store_true')
 
-    global args
-    args = parser.parse_args()
-
-def main():
-    parse_args()
-    input_dir = r"C:\Users\HikariDawn\Desktop\video"
-    store_dir = r"C:\Users\HikariDawn\Desktop\video_processed"
-    mass_process(input_dir, store_dir)
-
-
-if __name__ == "__main__":
-    main()

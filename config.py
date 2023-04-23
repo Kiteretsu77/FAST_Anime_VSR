@@ -63,8 +63,8 @@ class configuration:
     device="cuda"
     n_gpu = 1           # currently only 1 gpu
 
-    inp_path = r"C:\Users\HikariDawn\Desktop\video\pokemon.mp4"                 # file directory just for running "python main.py"
-    opt_path = r"C:\Users\HikariDawn\Desktop\pokemon_processed.mp4"             # proceesed video store directory
+    inp_path = r"C:\Users\HikariDawn\Desktop\video"                 # file directory just for running "python main.py"
+    opt_path = r"C:\Users\HikariDawn\Desktop\video_processed"       # proceesed video store directory
     ########################################################################################################################
 
 
