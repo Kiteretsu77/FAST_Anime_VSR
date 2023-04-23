@@ -28,12 +28,8 @@ def main():
     folder_prepare()
 
     if os.path.isdir(configuration.inp_path):
-        # whoel video process
+        # whole video process
         print(f"We are going to process all videos in {configuration.inp_path}")
-        # if not os.path.isdir(configuration.opt_path):
-        #     print("The output folder is not a folder. This is an error")
-        #     os._exit(0)
-
         mass_process(configuration.inp_path, configuration.opt_path)
 
     elif os.path.exists(configuration.inp_path):
