@@ -16,7 +16,7 @@ If you like this repository, you can give me a star (if you are willing). Feel f
 # Supported Devices:
 1. Nvidia GPU with Cuda
 
-# Install (Windows)：
+### Installation (Windows)：
 1. install cuda (11.7, Mine)
 2. install cudnn (8.6, strongly recommend this version!)
 3. install tensorrt (Don't directly use python install)
@@ -35,26 +35,30 @@ If you like this repository, you can give me a star (if you are willing). Feel f
 
 
 
-# Run:
-1. download cunet weight (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/Changelog_CN.md) and name it as "cunet_weight.pth" and put it under the folder "weights/" (you will need to first make the directory "weights")
-2. generate weights first by edit your desired Low Resolution input size (lr_h, lr_width) in weight_generation/weight_generator.py in main()
-3. run "python weight_generation/weight_generator.py" (Currently no argument is needed)
-4. edit config.py, especially: process_num, full_model_num, nt  (try to set them based on your gpu power)
-5. run "python mass_production.py" to process all videos inside a folder (needed to edit input_dir && store_dir)
+### Run (Inference):
+<!-- 1. download cunet weight (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/Changelog_CN.md) and name it as "cunet_weight.pth" and put it under the folder "weights/" (you will need to first make the directory "weights") -->
+<!-- 1. generate weights first by edit your desired Low Resolution input size (lr_h, lr_width) in weight_generation/weight_generator.py in main() -->
+1. adjust "config.py" to setup your setting. Usually, just editing "Frequently Edited Setting" part is enought. Plaese follow instruction there.
+    e.g. edit config.py, especially: process_num, full_model_num, nt  (try to set them based on your gpu computation power)
+1. Run (**original cunet weight** should be automatically downloaded and **tensorrt weight transform** should be generated automatically based on input height and weight):
+'''
+python main.py
+'''
+
+<!-- 1. run "python mass_production.py" to process all videos inside a folder (needed to edit input_dir && store_dir)
    run "python main.py" to process just one single file (edit input and output directory in config.py by inp_path && store_dir) [**This mode doesn't use any multiprocessing**, so it's **much slower than mass_production.py**]
-    (Wait me to update parallel.py)
+    (Wait me to update parallel.py) -->
     
 
 
 # Future Works:
-1. use just one file to run any case (either processing a folder or just one single video)
-2. directly generate weights from main.py and mass_production.py while running for the first time
-3. Provide all repository in English.
-4. Ubuntu setup for TensorRT (not yet tested)
-5. record a video for how to install TensorRT from scratch
+1. Provide effect graph in README.
+1. Provide all repository in English.
+1. Ubuntu setup for TensorRT (not yet tested)
+1. record a video for how to install TensorRT from scratch
 
 
 # Disclaimer:
-1. the sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
-2. My code is edited from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
+1. The sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
+2. My code is developed from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
 

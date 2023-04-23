@@ -20,6 +20,8 @@ from multiprocessing import Queue
 from time import time as ttime, sleep
 import argparse
 import shutil
+import requests
+
 
 # From local folder
 root_path = os.path.abspath('.')
@@ -336,9 +338,22 @@ def parse_args():
 
     args.int8_mode = False
 
+def check_file():
+    if not os.path.exists("weights/cunet_weight.pth"):
+        print("There isn't cunet_weight.pth under weights folder")
+        
+
+        # Automatically download one
+        print("We will automatically download one from google drive!!!")
+        url = "https://drive.google.com/u/0/uc?id=1hc1Xh_1qBkU4iGzWxkThpUa5_W9t7GZ_&export=download"
+        r = requests.get(url, allow_redirects=True)
+        open('weights/cunet_weight.pth', 'wb').write(r.content)
+        # shutil.move('weights/cunet_weight.pth', 'weights/cunet_weight.pth')
+
 
 def generate_weight(lr_h = 540, lr_width = 960):
     parse_args()
+    check_file()
 
     tensorrt_transform_execute(lr_h, lr_width)
     

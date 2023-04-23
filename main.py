@@ -19,6 +19,10 @@ def folder_prepare():
         shutil.rmtree("tmp/")
     os.mkdir("tmp/")
 
+    if not os.path.exists("weights/"):
+        os.mkdir("weights/")
+        
+
 
 def main():
     folder_prepare()
@@ -26,9 +30,9 @@ def main():
     if os.path.isdir(configuration.inp_path):
         # whoel video process
         print(f"We are going to process all videos in {configuration.inp_path}")
-        if not os.path.isdir(configuration.opt_path):
-            print("The output folder is not a folder. This is an error")
-            os._exit(0)
+        # if not os.path.isdir(configuration.opt_path):
+        #     print("The output folder is not a folder. This is an error")
+        #     os._exit(0)
 
         mass_process(configuration.inp_path, configuration.opt_path)
 
