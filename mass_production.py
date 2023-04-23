@@ -60,7 +60,7 @@ def parse_args():
 def main():
     parse_args()
     input_dir = r"C:\Users\HikariDawn\Desktop\video"
-    store_dir = r"C:\Users\HikariDawn\Desktop\processed"
+    store_dir = r"C:\Users\HikariDawn\Desktop\video_processed"
     mass_process(input_dir, store_dir)
 
 

@@ -315,6 +315,7 @@ def tensorrt_transform_execute(target_h, target_w, img_dir="weight_generation/fu
 
     print("Total time spent is %d s" %(int(time.time() - start)))
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     
@@ -336,14 +337,13 @@ def parse_args():
     args.int8_mode = False
 
 
-def main():
+def generate_weight(lr_h = 540, lr_width = 960):
     parse_args()
 
-    lr_h, lr_width = 480, 640
     tensorrt_transform_execute(lr_h, lr_width)
     
 
 if __name__ == "__main__":
-    main()
+    generate_weight()
 
 

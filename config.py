@@ -8,13 +8,14 @@ class configuration:
         pass
 
     ######################################################  Frequently Edited Setting  #################################################### 
-    scale = 2  # Supported: 1|| 1.5 || 2  (If it's scale=1, we shrink to half height and width of it and upscale 2; If the size is 1.5, shrink by )
+    scale = 2  # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
+    
     
 
     # TODO: full_model_num有时候=0的时候，全部nt拉满反而会更加快，主要是full_model_num如果一启动，就会put太多full frame，然后必须要足够多的full_model_num来保证同一时间内帧得到处理了，不然就阻塞变慢了
     # Solution: 想办法拉高full frame门槛或者，当数量达到一定queue比例的时候，不要成为full frame（就crop处理），就是要一种dynamic根据queue量来塞的方案
-    process_num = 2          # This is a Process number
-    full_model_num = 2       # Full frame thread instance number
+    process_num = 1          # This is a Process number
+    full_model_num = 3       # Full frame thread instance number
     nt = 2                   # Partition frame (1in3) instance number 
 
     # Reference for my 3090Ti setting (almost full power)

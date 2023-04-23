@@ -39,6 +39,7 @@ If you like it, you can give me a star if you like. Feel free to report any prob
 2. directly generate weights from main.py and mass_production.py while running for the first time
 3. Provide all repository in English.
 4. Ubuntu setup for TensorRT (not yet tested)
+5. record a video for how to install TensorRT from scratch
 
 
 # Disclaimer:

@@ -5,11 +5,14 @@ import torch
 # 上面三个不按照这个顺序就会有bug(主要是环境的bug)
 
 import os, sys, collections
+import shutil
 from moviepy.editor import VideoFileClip
 from inference import VideoUpScaler
 from pathlib import Path
 from config import configuration
-import shutil
+
+# import functions from other file
+from weight_generation.weight_generator import generate_weight
 #  unet_base_name, unet_full_name, momentum, MSE_range, Max_Same_Frame, \
 #                     mse_learning_rate, target_saved_portion, device, inp_path, opt_path, nt, full_model_num, n_gpu, Queue_hyper_param, \
 #                     p_sleep, decode_sleep, encode_params
@@ -20,6 +23,7 @@ def check_existence(file_dir):
     if not my_file.is_file():
         print("P:No such file " + file_dir + " exists!")
         os._exit(0)
+
 
 def weight_justify(config):
     # Check if needed weight is here. If it is, just edit the config
@@ -40,21 +44,24 @@ def weight_justify(config):
     video = VideoFileClip(config.inp_path)
     w, h = video.w, video.h
     if config.scale != 2:
-        print("shrink target video size by half and then upscale  有缩略, debug的时候看这是否是真的是需要的")
+        print("shrink target video size by half and then upscale 2")
         w = int(w * (config.scale/2))
         h = int(h * (config.scale/2))
 
 
     partition_height = (h//3) + config.adjust + abs(config.left_mid_right_diff[0])
-    if w not in supported_res:
-        print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported!")
-        os._exit(0)
-    if h not in supported_res[w]:
-        print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported!")
-        os._exit(0)
-    if partition_height not in supported_res[w]:
-        print("No such partition resolution (" + str(w) + "X" + str(partition_height) +") weight supported!")
-        os._exit(0)
+    if w not in supported_res or h not in supported_res[w] or partition_height not in supported_res[w]:
+        print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported in current folder!")
+        print("We are going to generate the weight!!!")
+
+        # Call weight generator
+        assert(h<=1080 and w<=1920)
+        generate_weight(h, w)
+
+        print("Finish generating the weight!!!")
+
+
+        # os._exit(0)
     print("This resolution " + str(w) + "X" + str(h) +" is supported in weights available!")
 
     
@@ -101,10 +108,15 @@ def process_video(params = None):
     os._exit(0)
 
 
-def main():
+def folder_prepare():
     if os.path.exists("tmp/"):
         shutil.rmtree("tmp/")
     os.mkdir("tmp/")
+
+
+def main():
+    folder_prepare()
+    
     process_video()
 
 
