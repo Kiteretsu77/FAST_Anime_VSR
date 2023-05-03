@@ -1,4 +1,4 @@
-# FAST AVSRR (Anime Video Super Resolution and Restoration)
+# FAST Anime VSRR (Video Super Resolution and Restoration)
 This is a repositary to acelerate Super Resolution (SR) in Anime video.
 It's based on Real-CuGAN (https://github.com/bilibili/ailab/tree/main/Real-CUGAN). 
 I implement it in **TensorRT** version and utilized a frame division algorithm (self-designed) to accelerate it (with a video redunduncy jump mechanism and a momentum mechanism). Plus, I use FFMPEG to decode a smaller FPS for faster processing. Plus, multiprocessing and multithreading.
