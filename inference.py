@@ -22,7 +22,7 @@ sys.path.append(root_path_)
 class UpScalerMT(threading.Thread):
     def __init__(self, id, inp_q, res_q, device, model, p_sleep, nt):
         '''
-            这整个class是为了调整Multi-Thread才存在的, 也可以用在时间统计上面
+            Multi-Thread Processing
         '''
         # threading.Thread.__init__(self)
         super(UpScalerMT, self).__init__()
@@ -42,7 +42,7 @@ class UpScalerMT(threading.Thread):
 
     def __del__(self):
         '''
-            这里是Outer model shell的时间报告
+            Report time 
         '''
         if self.total_counter_ != 0:
             with s_print_lock:
@@ -54,7 +54,7 @@ class UpScalerMT(threading.Thread):
 
     def execute(self, np_frame, position):
         '''
-            在这里把数据送到model中
+            Send data(frames) to the model
         '''
         return self.model(np_frame, position)
 
@@ -63,7 +63,7 @@ class UpScalerMT(threading.Thread):
         idx, position, np_frame = tmp
 
         
-        ####################### 整个RealCuGAN的运行 #####################
+        ####################### RealCuGAN Execuation #####################
         full_exe_start_time = ttime()
 
         try:
@@ -80,8 +80,7 @@ class UpScalerMT(threading.Thread):
         self.total_cost_time += full_exe_time_spent
         self.total_counter_ += 1
         if self.nt > 1:
-            # sleep调整，每次运行结束以后
-            #TODO: 这个sleep为什么存在，我实在不理解
+            # sleep adjustment, Must have here else there may be bug
             sleep(uniform(self.p_sleep[0], self.p_sleep[1]))
 
         return (idx, position, res)
@@ -105,10 +104,10 @@ class VideoUpScaler(object):
     def __init__(self, configuration):
 
         ###################################### Important Params ##################################################################################
-        self.writer = None  #占个坑，call中用
+        self.writer = None    # Used in Call function
         self.nt = configuration.nt
         self.scale = configuration.scale
-        self.n_gpu = configuration.n_gpu  # 每块GPU开nt个进程
+        self.n_gpu = configuration.n_gpu  # number of threads that each GPU use
         self.encode_params = configuration.encode_params
         self.decode_sleep = configuration.decode_sleep
         self.now_idx = 0
@@ -153,10 +152,10 @@ class VideoUpScaler(object):
         self.left_mid_right_diff = configuration.left_mid_right_diff # 这个理解起来就是第一个最右/下侧多2， 中间两边都少2（同少4），最后一个左/上边多2
 
         self.full_frame_cal_num = 0
-        self.full_model_num = configuration.full_model_num  # 管理了有多少的full model在用, 一般来说3是比较好的数字吧
+        self.full_model_num = configuration.full_model_num  # number of full model available
 
         self.momentum = configuration.momentum
-        self.momentum_reference_size = 3 # 整个queue size还是3比较好
+        self.momentum_reference_size = 3 # queue size
         self.times2switchFULL = 0
         self.momentum_used_num = 0
         self.momentum_reference = collections.deque([False]*self.momentum_reference_size, maxlen=self.momentum_reference_size)
@@ -167,7 +166,7 @@ class VideoUpScaler(object):
         self.inp_q_full = None
         if configuration.full_model_num != 0:
             Full_Frame_Queue_size = int( (self.full_model_num + 1) * self.n_gpu * configuration.Queue_hyper_param)
-            self.inp_q_full = Queue(Full_Frame_Queue_size) # 整个frame的queue
+            self.inp_q_full = Queue(Full_Frame_Queue_size) # queue of full frame
             print("Total FUll Queue size is ", Full_Frame_Queue_size)
 
         # Sub Frame 
@@ -180,7 +179,7 @@ class VideoUpScaler(object):
         # In total
         Res_q_size = int( (self.nt + self.full_model_num) * self.n_gpu * configuration.Queue_hyper_param//2)
         print("res_q size is ", Res_q_size)
-        self.res_q = Queue(Res_q_size)  # 超分帧结果缓存上限
+        self.res_q = Queue(Res_q_size)  # Super-Resolved Frames Cache
         self.idx2res = collections.defaultdict(dict)
         ###################################################################################################
 
@@ -190,7 +189,7 @@ class VideoUpScaler(object):
         # 目前先搞少量的full model place
         for _ in range(self.full_model_num):
             model = RealCuGAN_Scalar(unet_full_path_full_frame, self.device, self.adjust)
-            upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, "full", model, configuration.p_sleep, 1) # TODO: 这个nt我是觉得1就行了吧，涉及到sleep问题
+            upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, "full", model, configuration.p_sleep, 1)
             upscaler_full.start()
 
 
@@ -344,7 +343,7 @@ class VideoUpScaler(object):
         #############################################################################################
         
 
-        ################################### 创建Video Writer #########################################################################################
+        ################################### Build Video Writer ########################################################################################
         if if_audio:
             tmp_audio_path = "%s.m4a" % tmp_path
             objVideoreader.audio.write_audiofile(tmp_audio_path, codec="aac")
@@ -361,7 +360,7 @@ class VideoUpScaler(object):
 
         mse_total_spent = 0
         video_decode_loop_start = ttime()
-        ###################################### 整个video decode loop #######################################################
+        ######################################### video decode loop #######################################################
         for idx, frame in enumerate(objVideoreader.iter_frames(fps=self.target_fps)): # 删掉了target fps
             
             if self.scale != 2:

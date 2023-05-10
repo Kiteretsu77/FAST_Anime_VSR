@@ -10,8 +10,8 @@ class configuration:
     
     ######################################################  Frequently Edited Setting  #################################################### 
     scale = 2  # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
-    inp_path = r"C:\Users\HikariDawn\Desktop\video"                 # intput path (can be a single video file or a folder directory with videos)
-    opt_path = r"C:\Users\HikariDawn\Desktop\video_processed"       # storage path after processing all videos in inp_path (should only be a folder directory)
+    inp_path = r"C:\Users\HikariDawn\Desktop\test"                 # intput path (can be a single video file or a folder directory with videos)
+    opt_path = r"C:\Users\HikariDawn\Desktop\test_processed"       # storage path after processing all videos in inp_path (should only be a folder directory)
     
 
     # Multithread and Multiprocessing setting 

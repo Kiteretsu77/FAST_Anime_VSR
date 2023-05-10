@@ -4,9 +4,10 @@ tmp/
 *.pyc
 .idea/
 *.png
-!weight_generation/full_sample.png
-
 *.mp4
 *.pth
 weights/*
 *.*.pyc
+
+!weight_generation/full_sample.png
+!figures/*.png
