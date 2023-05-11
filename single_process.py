@@ -187,7 +187,7 @@ def single_process(params = None):
     report = video_upscaler(configuration.inp_path, configuration.opt_path)
 
 
-    print("All Done for video " + configuration.inp_path + " !")
+    print("Done for video " + configuration.inp_path + " !")
     os._exit(0)
     
 

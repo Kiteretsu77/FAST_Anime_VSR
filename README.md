@@ -25,9 +25,9 @@ If you like this repository, you can give me a star (if you are willing). Feel f
 1. Nvidia GPU with Cuda
 
 # Installation (Windows)：
-1. install cuda (11.7, Mine)
-2. install cudnn (8.6, strongly recommend this version!)
-3. install tensorrt (Don't directly use python install)\
+1. Install cuda (11.7, Mine)
+2. Install cudnn (8.6, strongly recommend this version!)
+3. Install tensorrt (Don't directly use python install) \
     Please strictly Follow https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-zip \
     After finishing these steps, you should be able to "import tensorrt" in python (start a new window after finishing installation to run this)\
     Some reminder:\
@@ -56,7 +56,9 @@ python main.py
 <!-- 1. run "python mass_production.py" to process all videos inside a folder (needed to edit input_dir && store_dir)
    run "python main.py" to process just one single file (edit input and output directory in config.py by inp_path && store_dir) [**This mode doesn't use any multiprocessing**, so it's **much slower than mass_production.py**]
     (Wait me to update parallel.py) -->
-    
+
+# Several things to be aware of:
+
 
 
 # Future Works:

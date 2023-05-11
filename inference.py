@@ -113,7 +113,7 @@ class VideoUpScaler(object):
         self.now_idx = 0
         self.loop_counter = 0
         self.total_frame_number = 0
-        self.target_fps = 24
+        self.decode_fps = configuration.decode_fps
         self.height = None
         self.device = configuration.device
 
@@ -144,7 +144,6 @@ class VideoUpScaler(object):
         self.MSE_range = configuration.MSE_range
         self.Max_Same_Frame = configuration.Max_Same_Frame
         self.mse_learning_rate = configuration.mse_learning_rate
-        self.target_saved_portion = configuration.target_saved_portion
         ############################################################################
 
         ########################## Image Crop & Momentum ##########################################################################
@@ -321,7 +320,7 @@ class VideoUpScaler(object):
 
 
     def __call__(self, input_path, output_path):
-        ############################### 创建路径&& INIT ############################################
+        ############################### Build PATH && INIT ############################################
         video_format = input_path.split(".")[-1]
         os.makedirs(os.path.join(root_path_, "tmp"), exist_ok=True)
         tmp_path = os.path.join(root_path_, "tmp", "%s.%s" % (int(ttime()*1000000), video_format))
@@ -332,15 +331,13 @@ class VideoUpScaler(object):
 
 
         fps = objVideoreader.reader.fps
-        self.target_saved_portion *= float(fps/30) #以30fps为基准进行调整
-        print("target_saved_portion is ", self.target_saved_portion)
-        self.total_frame_number = int(self.target_fps * (objVideoreader.reader.nframes/fps))
+        if self.decode_fps == -1:
+            # use original fps as decode fps
+            self.decode_fps = fps
+        self.total_frame_number = int(self.decode_fps * (objVideoreader.reader.nframes/fps))
         if_audio = objVideoreader.audio
         #############################################################################################
 
-
-        ########################### check specs matchment ###########################################
-        #############################################################################################
         
 
         ################################### Build Video Writer ########################################################################################
@@ -348,9 +345,9 @@ class VideoUpScaler(object):
             tmp_audio_path = "%s.m4a" % tmp_path
             objVideoreader.audio.write_audiofile(tmp_audio_path, codec="aac")
             # 得到的writer先给予audio然后再一帧一帧的写frame
-            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.target_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
+            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
         else:
-            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.target_fps, ffmpeg_params=self.encode_params)
+            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params)
         # 如果是1x scale，这个后面开始就要shrink了
         if self.scale != 2:
             self.width = int(self.width * (self.scale/2))
@@ -361,7 +358,7 @@ class VideoUpScaler(object):
         mse_total_spent = 0
         video_decode_loop_start = ttime()
         ######################################### video decode loop #######################################################
-        for idx, frame in enumerate(objVideoreader.iter_frames(fps=self.target_fps)): # 删掉了target fps
+        for idx, frame in enumerate(objVideoreader.iter_frames(fps=self.decode_fps)): # 删掉了target fps
             
             if self.scale != 2:
                 # if scale = 1/1.5, adjust output size at the beginning
@@ -530,7 +527,7 @@ class VideoUpScaler(object):
             print("Done! Total time cost:", full_time_spent)
         else:
             print("Done! Total time cost: %d min %d s" %(full_time_spent//60, full_time_spent%60))
-        print("Counting Saved frame, the fps is %.2f which is %.2f scale on fps" %(total_exe_fps, total_exe_fps/self.target_fps))
+        print("Counting Saved frame, the fps is %.2f which is %.2f scale on fps" %(total_exe_fps, total_exe_fps/self.decode_fps))
         print("The Number of partitions put into small Upscaler is %d which is %.2f %%" % (
                 self.parition_processed_num, 100 * self.parition_processed_num / (self.total_frame_number * 3)))
         print("Saved frames number: %d partitions which is %.2f %%" %(self.skip_counter_, 100*partition_saved_portion))
@@ -546,7 +543,7 @@ class VideoUpScaler(object):
         report["input_path"] = input_path
         report["full_time_spent"] = full_time_spent
         report["total_exe_fps"] = total_exe_fps
-        report["performance_scale"] = total_exe_fps/self.target_fps
+        report["performance_scale"] = total_exe_fps/self.decode_fps
         report["parition_processed_num"] = self.parition_processed_num
         report["skip_counter"] = self.skip_counter_
         report["full_frame_cal_num"] = self.full_frame_cal_num
