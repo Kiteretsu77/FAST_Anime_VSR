@@ -22,12 +22,11 @@ def folder_prepare():
         os.mkdir("weights/")
         
 
-
 def main():
     folder_prepare()
 
     if os.path.isdir(configuration.inp_path):
-        # whole video process
+        # whole video folder process
         print(f"We are going to process all videos in {configuration.inp_path}")
         mass_process(configuration.inp_path, configuration.opt_path)
 
@@ -38,7 +37,7 @@ def main():
             os._exit(0)
 
         print(f"We are going to process single videos located at {configuration.inp_path}")
-        parallel_process()
+        parallel_process(configuration.inp_path, configuration.opt_path, parallel_num=configuration.process_num)
 
     else:
         print("We didn't find such location exists!")

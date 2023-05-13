@@ -10,7 +10,7 @@ Feel free to look at this document (https://docs.google.com/presentation/d/1Gxux
 My ultimate target is to directly utilize decode information in Video Codec as like this paper (https://arxiv.org/abs/1603.08968), so I use the same "FAST" at the beginning.
 
 
-If you like this repository, you can give me a star (if you are willing). Feel free to report any problem to me.
+**If you like this repository, you can give me a star (if you are willing). Feel free to report any problem to me.**
 
 
 # Visual Improvement

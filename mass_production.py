@@ -8,8 +8,6 @@ from config import configuration
 from single_process import parallel_process
 
 
-accepted_format = ["mp4", "mkv"]
-
 def check_existence(dir, create=False):
     if not os.path.exists(dir):
         print("This " + dir + " file folder doesn't exist!")
@@ -19,30 +17,27 @@ def check_existence(dir, create=False):
             os.mkdir(dir)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    # parser.add_argument('--extract_subtitle', action='store_true')
-
-    global args
-    args = parser.parse_args()
+# def parse_args():
+#     parser = argparse.ArgumentParser()
+#     # parser.add_argument('--extract_subtitle', action='store_true')
+#     global args
+#     args = parser.parse_args()
 
 
 def mass_process(input_folder_dir, output_dir_parent):
-    parse_args()
+    # parse_args()
     
     check_existence(input_folder_dir)
     check_existence(output_dir_parent, create=True)
 
+
     print("All files begin")
     for _, file in enumerate(sorted(os.listdir(input_folder_dir))):
         lists = file.split('.')
-        format = lists[-1]
-        if format not in accepted_format:
-            print("This format is not supported")
-            os._exit(0)
         target_name = ''.join(lists[:-1])
 
 
+        # Find name of input and ouput
         input_name = os.path.join(input_folder_dir, file)
         output_name = os.path.join(output_dir_parent, target_name + "_processed.mp4")
         print(input_name, output_name)
@@ -50,7 +45,11 @@ def mass_process(input_folder_dir, output_dir_parent):
 
         # Process the video
         start = time.time()
-        parallel_process(input_name, output_name, args, parallel_num=configuration.process_num)
+
+
+        parallel_process(input_name, output_name, parallel_num=configuration.process_num)
+
+
         full_time_spent = int(time.time() - start)
         print("Total time spent for this video is %d min %d s" %(full_time_spent//60, full_time_spent%60))
 

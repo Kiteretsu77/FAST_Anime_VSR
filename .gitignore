@@ -5,6 +5,7 @@ tmp/
 .idea/
 *.png
 *.mp4
+*.mov
 *.pth
 weights/*
 *.*.pyc

@@ -14,6 +14,7 @@ from multiprocessing import Process
 
 # import functions from other file
 from weight_generation.weight_generator import generate_weight
+from utils import check_input_support
 
 
 
@@ -131,14 +132,14 @@ def split_video(input_file, parallel_num):
     os.system(audio_split_cmd)
 
     # Divide videos to segments
-    ffmpeg_divide_cmd = "ffmpeg -i  " + input_file +  " -f segment -an -codec copy -loglevel quiet -segment_time " + str(divide_time) + " -reset_timestamps 1 tmp/part%01d.mp4"
+    ffmpeg_divide_cmd = "ffmpeg -i  " + input_file +  " -f segment -an -codec copy -loglevel quiet -segment_time " + str(divide_time) + " -reset_timestamps 1 tmp/part%01d." + configuration.input_video_format
     os.system(ffmpeg_divide_cmd)
     
     # handle config setting
     configs = []
     for i in range(parallel_num):
-        config = {"inp_path": "tmp/part" + str(i) +".mp4", 
-                    "opt_path": "tmp/part" + str(i) +"_res.mp4"}
+        config = {"inp_path": "tmp/part" + str(i) +"." + configuration.input_video_format, 
+                    "opt_path": "tmp/part" + str(i) +"_res." + configuration.input_video_format}
 
         configs.append(config)
         
@@ -150,7 +151,7 @@ def combine_video(target_output, parallel_num):
     # write necessary ffmpeg file
     file = open("tmp/target.txt", "a")
     for i in range(parallel_num):
-        file.write("file part"+str(i)+"_res.mp4\n")
+        file.write("file part"+str(i)+"_res."+ configuration.input_video_format+"\n")
     file.close()
 
     additional_cmd = " -i tmp/output_audio.m4a -c:a aac -strict experimental "
@@ -169,33 +170,14 @@ def combine_video(target_output, parallel_num):
 def extract_subtitle(dir):
     ffmpeg_extract_subtitle_cmd = "ffmpeg -i " + dir + " -map 0:s:0 tmp/subtitle.srt"
     os.system(ffmpeg_extract_subtitle_cmd)
-
-
-def single_process(params = None):
-    root_path = os.path.abspath('.')
-    sys.path.append(root_path)
-
-    # Preprocess to edit params to the newest version we need
-    config_preprocess(params, configuration)
-
-
-    # TODO: 我觉得这里应该直接读取video height和width然后直接选择模型，不然每次自己手动很麻烦
-    video_upscaler = VideoUpScaler(configuration)
-
-    print("="*100)
-    print("Current Processing file is ", configuration.inp_path)
-    report = video_upscaler(configuration.inp_path, configuration.opt_path)
-
-
-    print("Done for video " + configuration.inp_path + " !")
-    os._exit(0)
     
 
 def parallel_process(input_dir, output_dir, args=None, parallel_num = 2):
-    print(parallel_num)
     
     check_existence(input_dir)
     check_repeat_file(output_dir)
+    video_format = check_input_support(input_dir)
+    configuration.input_video_format = video_format
 
 
     # extract subtitle automatically no matter if it has or not
@@ -221,3 +203,20 @@ def parallel_process(input_dir, output_dir, args=None, parallel_num = 2):
 
     # combine video together
     combine_video(output_dir, parallel_num)
+
+
+
+def single_process(params = None):
+    root_path = os.path.abspath('.')
+    sys.path.append(root_path)
+    # Preprocess to edit params to the newest version we need
+    config_preprocess(params, configuration)
+
+
+    # TODO: 我觉得这里应该直接读取video height和width然后直接选择模型，不然每次自己手动很麻烦
+    video_upscaler = VideoUpScaler(configuration)
+    print("="*100)
+    print("Current Processing file is ", configuration.inp_path)
+    report = video_upscaler(configuration.inp_path, configuration.opt_path)
+    print("Done for video " + configuration.inp_path + " !")
+    os._exit(0)

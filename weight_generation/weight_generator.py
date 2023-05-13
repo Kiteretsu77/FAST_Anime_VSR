@@ -343,8 +343,8 @@ def check_file():
         print("There isn't cunet_weight.pth under weights folder")
         
 
-        # Automatically download one
-        print("We will automatically download one from google drive!!!")
+        # Automatically download Code, but if you want other weight, like less denoise, please go see https://drive.google.com/drive/folders/1jAJyBf2qKe2povySwsGXsVMnzVyQzqDD
+        print("We will automatically download one from CuNet repository google drive!!!")
         url = "https://drive.google.com/u/0/uc?id=1hc1Xh_1qBkU4iGzWxkThpUa5_W9t7GZ_&export=download"
         r = requests.get(url, allow_redirects=True)
         open('weights/cunet_weight.pth', 'wb').write(r.content)
