@@ -20,13 +20,18 @@ def folder_prepare():
 
     if not os.path.exists("weights/"):
         os.mkdir("weights/")
-        
+
+
 
 def main():
     folder_prepare()
 
     if os.path.isdir(configuration.inp_path):
         # whole video folder process
+        if not os.path.isdir(configuration.opt_path):
+            print("The output folder is not an directory when the input folder is a folder")
+            os._exit(0)
+
         print(f"We are going to process all videos in {configuration.inp_path}")
         mass_process(configuration.inp_path, configuration.opt_path)
 

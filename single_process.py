@@ -1,8 +1,7 @@
-# 头三个一定要按照这个path,因为main是最早被call的，所以最开始就处理好
+# The first three lib import is needed to be in the following order, else there is a bug of dependency appear
 import tensorrt
 from torch2trt import torch2trt
 import torch 
-# 上面三个不按照这个顺序就会有bug(主要是环境的bug)
 
 import os, sys, collections
 import shutil, math
@@ -112,7 +111,7 @@ def check_repeat_file(output_dir):
         shutil.rmtree("tmp/")
     os.mkdir("tmp/")
 
-    # to avoid annoying Yes or No on cmd by FFMPEG
+    # to avoid annoying Yes or No to delete files on cmd of FFMPEG
     target_files = []
     target_files.append(output_dir)
 
@@ -154,15 +153,21 @@ def combine_video(target_output, parallel_num):
         file.write("file part"+str(i)+"_res."+ configuration.input_video_format+"\n")
     file.close()
 
-    additional_cmd = " -i tmp/output_audio.m4a -c:a aac -strict experimental "
+    # If audio exists, we can append them inside the final output video
+    additional_cmd = " "
+    if os.path.exists("tmp/output_audio.m4a"):
+        additional_cmd += " -i tmp/output_audio.m4a -c:a aac -strict experimental "
+    
+
     second_adidional = " "
     if os.path.exists("tmp/subtitle.srt"):
-        # ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt -i tmp/subtitle.srt -loglevel quiet -c copy -c:s mov_text " + target_output
+        # If subtitle exists, we can append them inside the final output video
         additional_cmd += " -i tmp/subtitle.srt -c copy -c:s mov_text " # move -c copy bevore -c:s
     else:
         second_adidional = " -c copy "
 
-    ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt " + additional_cmd + " -loglevel quiet " + second_adidional +  target_output
+    ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt " + additional_cmd + " " + second_adidional +  target_output
+    # -loglevel quiet
     os.system(ffmpeg_combine_cmd)
 
 
