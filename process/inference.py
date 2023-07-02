@@ -1,23 +1,20 @@
-import collections, math
-import threading, sys, torch, cv2
+import collections
+import threading, sys, cv2
 from random import uniform
 from multiprocessing import Queue
 from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
 from moviepy.editor import VideoFileClip
 from time import time as ttime, sleep
-import os, time, shutil, random
+import os
 import numpy as np
-from multiprocessing import Process
-
-# import file from other directory
-from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
-
 from threading import Lock
 s_print_lock = Lock()
+
 
 # import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
+from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
 
 
 class UpScalerMT(threading.Thread):

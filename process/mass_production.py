@@ -1,9 +1,3 @@
-# 头三个一定要按照这个path,因为main是最早被call的，所以最开始就处理好
-import tensorrt
-from torch2trt import torch2trt
-import torch 
-# 上面三个不按照这个顺序就会有bug(主要是环境的bug)
-
 import os, time, sys
 from config import configuration
 

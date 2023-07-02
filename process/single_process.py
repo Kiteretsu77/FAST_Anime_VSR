@@ -1,8 +1,3 @@
-# The first three lib import is needed to be in the following order, else there is a bug of dependency appear
-import tensorrt
-from torch2trt import torch2trt
-import torch 
-
 import os, sys, collections
 import shutil, math
 from moviepy.editor import VideoFileClip
@@ -10,6 +5,7 @@ from process.inference import VideoUpScaler
 from pathlib import Path
 from config import configuration
 from multiprocessing import Process
+
 
 # import from local folder
 root_path_ = os.path.abspath('.')

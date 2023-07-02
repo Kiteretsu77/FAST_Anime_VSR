@@ -1,9 +1,3 @@
-# 头三个一定要按照这个path
-import tensorrt
-from torch2trt import torch2trt
-import torch 
-# 上面三个不按照这个顺序就会有bug
-
 from torch import nn as nn
 from torch.nn import functional as F
 from time import time as ttime
@@ -12,7 +6,7 @@ import cv2
 import numpy as np
 import time
 import os, sys
-from time import time as ttime, sleep
+from time import time as ttime
 import argparse
 import shutil
 import requests

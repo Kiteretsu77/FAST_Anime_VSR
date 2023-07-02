@@ -1,11 +1,6 @@
-# 头三个一定要按照这个path
-import tensorrt
-from torch2trt import torch2trt
-import torch 
-# 上面三个不按照这个顺序就会有bug(主要是环境的bug)
-
 from torch2trt import TRTModule
 from torch import nn as nn
+import torch
 from torch.nn import functional as F
 from time import time as ttime
 import numpy as np

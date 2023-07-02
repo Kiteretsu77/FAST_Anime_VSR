@@ -1,3 +1,9 @@
+# The first three lib import is needed to be in the following order, else there is a bug of dependency appear
+import tensorrt
+from torch2trt import torch2trt
+import torch 
+##########################################
+
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="1"          # GPU device for inference
 
