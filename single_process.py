@@ -166,8 +166,7 @@ def combine_video(target_output, parallel_num):
     else:
         second_adidional = " -c copy "
 
-    ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt " + additional_cmd + " " + second_adidional +  target_output
-    # -loglevel quiet
+    ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt " + additional_cmd + " -loglevel quiet " + second_adidional +  target_output
     os.system(ffmpeg_combine_cmd)
 
 
