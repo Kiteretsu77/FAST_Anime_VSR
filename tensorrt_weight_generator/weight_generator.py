@@ -1,7 +1,11 @@
+import tensorrt
+from torch2trt import torch2trt
+import torch 
 from torch import nn as nn
 from torch.nn import functional as F
-from time import time as ttime
 from torch2trt import TRTModule
+
+from time import time as ttime
 import cv2
 import numpy as np
 import time
@@ -34,33 +38,39 @@ def np2tensor(np_frame):
 #############################################################################################################################
 
 
-# This will be set in config in the future, maybe
-full_sample_img_dir = "weight_generation/sample_input.png"
-
-
 
 class Generator:
-    def __init__(self, sample_input_dir):
-        if not os.path.exists(sample_input_dir):
-            print("no such sample_input_dir exists: ", sample_input_dir)
+
+    def __init__(self, input_dir):
+        if not os.path.exists(input_dir):
+            print("no such sample_input_dir exists: ", input_dir)
             os._exit(0)
 
-        img = cv2.imread(sample_input_dir)
-        (self.h, self.w, _) = img.shape
-        print("height & width is ", self.h, self.w)
-        self.sample_input = np.array(img)
+        if not os.path.exists(input_dir):
+            print("no sample input path {} exists for tensorrt weight generation ".format(input_dir))
+            os._exit(0)
 
+        # Read image info
+        img = cv2.imread(input_dir)
+        self.sample_input = np.array(img)
+        self.h, self.w, _ = img.shape
+        print("TensorRT weight Generator will process the image with height {} and width {} ".format(self.h, self.w))
+        
+
+        # Other config setup
         self.dont_calculate_transform = None
 
+
     def pre_process(self, tensor):
-        # 这个np2tensor别忘记了
+        # Don'r forget this np2tensor
         if not self.dont_calculate_transform:
             tensor = np2tensor(tensor)
         
-        #暂时默认全部都是偶数的情况，这点要特别注意
+        # 暂时默认全部都是偶数的情况，这点要特别注意
         intput = F.pad(tensor, (18, 18, 18, 18), 'reflect')  # pad最后一个倒数第二个dim各上下18个（总计36个）
         input = intput.cuda()
         # print("After pre-process, the shape is ", input.shape)
+
         return input
 
 
@@ -238,11 +248,11 @@ class Generator:
 
         ###################################################################################
 
-        # 生成新的weight
+        # Generate new weight if we don't only testify based on argparse
         if not args.only_testify:
             self.weight_generate()
 
-        #试一下batch
+        # Try some batches of images if we have test_dir
         if args.test_dir != "":
             self.testify(self.sample_input, test_number=100, partition_status=partition)
 
@@ -253,19 +263,18 @@ def generate_partition_frame(full_frame_dir):
     img = cv2.imread(full_frame_dir)
     h, w, _ = img.shape
     partition_height = (h//3) + 8 # TODO: 这个+8只是一个简单的写法，实际上应该更加dynamic的分配
-
+    
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     partition_img = img[:partition_height, :,:] # 第一个是width，第二个是height
-    print("Size after crop is ", partition_img.shape)
-    partition_frame_dir = "weight_generation/1in3.png"
+    print("Partition Size (1in3) after crop is ", partition_img.shape)
+    partition_frame_dir = configuration.partition_frame_dir
     cv2.imwrite(partition_frame_dir, partition_img)
 
     return partition_frame_dir
 
 
-def crop_image(img_dir, target_h, target_w):
-    img = cv2.imread(img_dir)
-    print("Input image size is ", img.shape)
+def crop_image(sample_img_dir, target_h, target_w):
+    img = cv2.imread(sample_img_dir)
 
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -277,25 +286,25 @@ def crop_image(img_dir, target_h, target_w):
 
     croped_img = img[:target_h, :target_w,:] # 第一个是height，第二个是width
     print("Size after crop is ", croped_img.shape)
-    cv2.imwrite(full_sample_img_dir, croped_img)
+    cv2.imwrite(configuration.full_croppped_img_dir, croped_img)
 
 
-def tensorrt_transform_execute(target_h, target_w, img_dir="weight_generation/full_sample.png"):
+def tensorrt_transform_execute(target_h, target_w, sample_img_dir=configuration.sample_img_dir):
     start = time.time()
 
-    # Crop image to desired height and width
-    crop_image(img_dir, target_h, target_w)
+    # Crop image to the desired height and width we need
+    crop_image(sample_img_dir, target_h, target_w)
 
     # Generate full frame
     if not args.only_partition_frame:
-        ins = Generator(full_sample_img_dir) 
+        ins = Generator(configuration.full_croppped_img_dir) 
         ins.run()
         print("Full Frame weight generation Done!")
 
 
     # Generate partition frame
     if not args.only_full_frame:
-        partition_img_dir = generate_partition_frame(full_sample_img_dir)
+        partition_img_dir = generate_partition_frame(configuration.full_croppped_img_dir)
         ins = Generator(partition_img_dir) 
         ins.run(partition = True)
         print("Partition Frame generation Done!")
@@ -323,6 +332,7 @@ def parse_args():
     args = parser.parse_args()
 
     args.int8_mode = False
+
 
 def check_file():
     if not os.path.exists("weights/cunet_weight.pth"):

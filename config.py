@@ -14,14 +14,14 @@ class configuration:
 
     
     ######################################################  Frequently Edited Setting  #################################################### 
-    scale = 1.5  # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
+    scale = 2  # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
     inp_path = r"/home/hiakaridawn2/Desktop/videos"                   # intput path (can be a single video file or a folder directory with videos)
     opt_path = r"/home/hiakaridawn2/Desktop/videos_processed"         # storage path after processing all videos in inp_path (should only be a folder directory)
     decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
 
     # Multithread and Multiprocessing setting 
-    process_num = 3          # This is a Process number
-    full_model_num = 3       # Full frame thread instance number
+    process_num = 3          # This is the fully parallel Process number
+    full_model_num = 2       # Full frame thread instance number
     nt = 2                   # Partition frame (1/3 part of a frame) instance number 
 
     # Reference for my 3090Ti setting (almost full power)
@@ -76,3 +76,9 @@ class configuration:
 
     encode_params = ['-crf', '23', '-preset', 'medium', "-tune", "animation", "-c:v", "libx264"]
     ######################################################################################################################################
+
+
+    # TensorRT Weight Generator needed info
+    sample_img_dir = "tensorrt_weight_generator/full_sample.png"
+    full_croppped_img_dir = "tensorrt_weight_generator/full_croppped_img.png"
+    partition_frame_dir = "tensorrt_weight_generator/partition_cropped_img.png"

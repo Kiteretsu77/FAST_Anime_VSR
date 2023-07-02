@@ -98,6 +98,6 @@ My ultimate target is to directly utilize decode information in Video Codec as i
 
 
 # Disclaimer:
-1. The sample image under weight_generation is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
+1. The sample image under tensorrt_weight_generator is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
 1. My code is developed from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
 

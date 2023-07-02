@@ -1,5 +1,12 @@
+import tensorrt
+from torch2trt import torch2trt
+import torch 
+
 import os, sys
 import shutil
+import collections
+from moviepy.editor import VideoFileClip
+
 
 # import from local folder
 root_path_ = os.path.abspath('.')
@@ -17,14 +24,19 @@ def folder_prepare():
 
     if not os.path.exists("weights/"):
         os.mkdir("weights/")
-
+ 
 
 
 def main():
+    ''' The main caller of all program, it will distinguish if the input is a folder or a single video and deal with them differently
+    '''
+    # Prepare folder
     folder_prepare()
 
+    # Convenient attribute here
     input_path  = configuration.inp_path
     output_path = configuration.opt_path
+
 
     # Handle a whole directory
     if os.path.isdir(input_path):
@@ -38,6 +50,7 @@ def main():
 
         print(f"We are going to process all videos in {input_path}")
         mass_process(input_path, output_path)
+
 
     # Handle a single video
     elif os.path.exists(input_path):

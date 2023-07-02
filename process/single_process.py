@@ -1,3 +1,7 @@
+import tensorrt
+from torch2trt import torch2trt
+import torch 
+
 import os, sys, collections
 import shutil, math
 from moviepy.editor import VideoFileClip
@@ -10,8 +14,8 @@ from multiprocessing import Process
 # import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
-from weight_generation.weight_generator import generate_weight
 from process.utils import check_input_support
+from tensorrt_weight_generator.weight_generator import generate_weight
 
 
 
@@ -20,55 +24,6 @@ def check_existence(file_dir):
     if not my_file.is_file():
         print("P:No such file " + file_dir + " exists!")
         os._exit(0)
-
-
-def weight_justify(config):
-    # Check if needed weight is here. If it is, just edit the config
-
-    # find all supported resolution weight
-    supported_res = collections.defaultdict(list)
-    for weight_name in os.listdir('weights/'):
-        if weight_name == "cunet_weight.pth":
-            continue
-        infos = weight_name.split('_')
-        resolution = infos[4]
-        width, height = resolution.split('X')
-        supported_res[int(width)].append(int(height))
-    print("supported resolution is ", supported_res)
-
-
-    # check if it is existed in supported_res
-    video = VideoFileClip(config.inp_path)
-    w, h = video.w, video.h
-    if config.scale != 2:
-        print("shrink target video size by half and then upscale 2")
-        w = int(w * (config.scale/2))
-        h = int(h * (config.scale/2))
-
-
-    partition_height = (h//3) + config.adjust + abs(config.left_mid_right_diff[0])
-    if w not in supported_res or h not in supported_res[w] or partition_height not in supported_res[w]:
-        print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported in current folder!")
-        print("We are going to generate the weight!!!")
-
-        # Call weight generator
-        assert(h<=1080 and w<=1920)
-        generate_weight(h, w)
-
-        print("Finish generating the weight!!!")
-
-
-        # os._exit(0)
-    print("This resolution " + str(w) + "X" + str(h) +" is supported in weights available!")
-
-    
-    # edit the unet base name for existed weight
-    config.unet_full_name = str(w) + "X" + str(h)
-    config.unet_partition_name = str(w) + "X" + str(partition_height)
-    
-
-    print(config.unet_full_name, config.unet_partition_name)
-
 
 
 def config_preprocess(params, config):
@@ -81,27 +36,51 @@ def config_preprocess(params, config):
     # check existence of input
     check_existence(config.inp_path)
 
-    weight_justify(config)
+
+def weight_justify(config, video_input_dir):
+    # Check if our needed weight is inside this folder. If it is, just edit the config
+
+    # Find all supported resolution weight
+    supported_res = collections.defaultdict(list)
+    for weight_name in os.listdir('weights/'):
+        if weight_name == "cunet_weight.pth":
+            continue
+        infos = weight_name.split('_')
+        resolution = infos[4]
+        width, height = resolution.split('X')
+        supported_res[int(width)].append(int(height))
+    print("Current supported input resolution for Super-Resolution is ", supported_res)
 
 
+    # Check if it is existed in supported_res
+    video = VideoFileClip(video_input_dir)
+    w, h = video.w, video.h
+    if config.scale != 2:
+        print("Shrink target video size by half and then upscale 2")
+        w = int(w * (config.scale/2))
+        h = int(h * (config.scale/2))
 
 
-def sec2foramt(time):
-    # Transform second to the format desired
-    time = int(time)
-    sec = str(time%60)
-    sec = "0"*(2-len(sec)) + sec
+    # Generate the TensorRT weight if needed
+    partition_height = (h//3) + config.adjust + abs(config.left_mid_right_diff[0])
+    if w not in supported_res or h not in supported_res[w] or partition_height not in supported_res[w]:
+        print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported in current folder!")
+        print("We are going to generate the weight now!!!")
 
-    time = time//60
-    minute = str(time%60)
-    minute = "0"*(2-len(minute)) + minute
+        # Call weight generator
+        assert( h <= 1080 and w <= 1920 )
+        generate_weight(h, w)
 
-    time = time//60
-    hour = str(time%60)
-    hour = "0"*(2-len(hour)) + hour
+        print("Finish generating the weight!!!")
 
-    format = hour + ":" + minute + ":" + sec
-    return format
+    print("This resolution " + str(w) + "X" + str(h) +" is supported in weights/ folder!")
+
+    
+    # Edit the unet base name for existed weight
+    config.unet_full_name = str(w) + "X" + str(h)
+    config.unet_partition_name = str(w) + "X" + str(partition_height)
+    print("The full frame name is {} and partition frame name is {} ".format(config.unet_full_name, config.unet_partition_name))
+
 
 
 def check_repeat_file(output_dir):
@@ -174,24 +153,37 @@ def extract_subtitle(dir):
     os.system(ffmpeg_extract_subtitle_cmd)
     
 
-def parallel_process(input_dir, output_dir, args=None, parallel_num = 2):
+def parallel_process(input_dir, output_dir, parallel_num = 2):
+    ''' Split video into several parts and super-resolve each seperately (This function will be called no matter what if the input is a single video or a foldder)
+    Args:
+        input_dir (str): single video directory
+        output_dir (str): output directory
+        parallel_num (int): how many videos you want to process completely parallelly
+    '''
     
+    # Check file preparation
     check_existence(input_dir)
     check_repeat_file(output_dir)
     video_format = check_input_support(input_dir)
     configuration.input_video_format = video_format
 
 
-    # extract subtitle automatically no matter if it has or not
+    # Prepare TensorRT weight (Detect this every time when you are processing a different video)
+    weight_justify(configuration, input_dir)
+
+
+    # Extract subtitle automatically no matter if it has or not
     extract_subtitle(input_dir)
 
-    configs = split_video(input_dir, parallel_num)
+
+    # Split video to process parallel
+    parallel_configs = split_video(input_dir, parallel_num)
 
 
     ######################### Double Process ############################
     Processes = []
     for i in range(parallel_num):
-        p1 = Process(target=single_process, args =(configs[i], ))
+        p1 = Process(target=single_process, args =(parallel_configs[i], ))
         p1.start()
         Processes.append(p1)
     print("All Processes Start")
@@ -209,8 +201,9 @@ def parallel_process(input_dir, output_dir, args=None, parallel_num = 2):
 
 
 def single_process(params = None):
-    root_path = os.path.abspath('.')
-    sys.path.append(root_path)
+    # root_path = os.path.abspath('.')
+    # sys.path.append(root_path)
+
     # Preprocess to edit params to the newest version we need
     config_preprocess(params, configuration)
 

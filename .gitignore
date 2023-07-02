@@ -10,5 +10,5 @@ tmp/
 weights/*
 *.*.pyc
 
-!weight_generation/full_sample.png
+!tensorrt_weight_generator/full_sample.png
 !figures/*.png

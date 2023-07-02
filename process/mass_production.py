@@ -17,15 +17,8 @@ def check_existence(dir, create=False):
             os.mkdir(dir)
 
 
-# def parse_args():
-#     parser = argparse.ArgumentParser()
-#     # parser.add_argument('--extract_subtitle', action='store_true')
-#     global args
-#     args = parser.parse_args()
-
 
 def mass_process(input_folder_dir, output_dir_parent):
-    # parse_args()
     
     check_existence(input_folder_dir)
     check_existence(output_dir_parent, create=True)
@@ -40,7 +33,7 @@ def mass_process(input_folder_dir, output_dir_parent):
         # Find name of input and ouput
         input_name = os.path.join(input_folder_dir, file)
         output_name = os.path.join(output_dir_parent, target_name + "_processed.mp4")
-        print(input_name, output_name)
+        print("We are super resolving {} and we will save it at {}".format(input_name, output_name))
 
 
         # Process the video

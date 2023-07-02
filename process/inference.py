@@ -18,6 +18,7 @@ from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
 
 
 class UpScalerMT(threading.Thread):
+    
     def __init__(self, id, inp_q, res_q, device, model, p_sleep, nt):
         '''
             Multi-Thread Processing
@@ -61,7 +62,7 @@ class UpScalerMT(threading.Thread):
         idx, position, np_frame = tmp
 
         
-        ####################### RealCuGAN Execuation #####################
+        ####################### RealCuGAN Execuation ############################
         full_exe_start_time = ttime()
 
         try:
@@ -73,7 +74,7 @@ class UpScalerMT(threading.Thread):
 
         full_exe_end_time = ttime()
         full_exe_time_spent = full_exe_end_time - full_exe_start_time
-        ################################################################
+        #########################################################################
 
         self.total_cost_time += full_exe_time_spent
         self.total_counter_ += 1
@@ -124,17 +125,17 @@ class VideoUpScaler(object):
         print("max_cache_loop size is ", self.max_cache_loop)
         #################################################################################################################################
 
-        ################################### load model #################################################################
+        ################################### Load model #############################################################################
         self.check_weight_support()
 
+        # Unet full and partition name setup
         unet_full_path_partition = "weights/unet_full_weight_trt_" + configuration.unet_partition_name + "_float16.pth"
-
         if configuration.full_model_num != 0:
             unet_full_path_full_frame = "weights/unet_full_weight_trt_" + configuration.unet_full_name + "_float16.pth"
+        # print("unet_full_name {} and unet_partition_name is {} ".format(unet_full_path_full_frame, unet_full_path_partition))
+        ############################################################################################################################
 
-        #################################################################################################################
-
-        ######################## similar frame optimization #######################
+        ######################## Similar frame optimization #######################
         self.skip_counter_ = 0
         self.reference_frame = [None, None, None]
         self.reference_idx = [-1, -1, -1]
@@ -158,7 +159,7 @@ class VideoUpScaler(object):
         self.momentum_reference = collections.deque([False]*self.momentum_reference_size, maxlen=self.momentum_reference_size)
         ############################################################################################################################
 
-        ############################### MultiThread And MultiProcess ###################################
+        ############################### MultiThread And MultiProcess #####################################################
         # Full Frame
         self.inp_q_full = None
         if configuration.full_model_num != 0:
@@ -178,23 +179,22 @@ class VideoUpScaler(object):
         print("res_q size is ", Res_q_size)
         self.res_q = Queue(Res_q_size)  # Super-Resolved Frames Cache
         self.idx2res = collections.defaultdict(dict)
-        ###################################################################################################
+        ####################################################################################################################
 
 
-        ############################# Model Preparation ###############################################################################
-
-        # 目前先搞少量的full model place
+        ############################# Model Preparation ####################################################################
+        # Full Frame Model
         for _ in range(self.full_model_num):
             model = RealCuGAN_Scalar(unet_full_path_full_frame, self.device, self.adjust)
             upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, "full", model, configuration.p_sleep, 1)
             upscaler_full.start()
 
-
+        # Partition Frame Model
         for id in range(self.nt):
             model = RealCuGAN_Scalar(unet_full_path_partition, self.device, self.adjust)
             upscaler = UpScalerMT(id, self.inp_q, self.res_q, self.device, model, configuration.p_sleep, self.nt)
             upscaler.start()
-        ###############################################################################################################################
+        ######################################################################################################################
 
     def check_weight_support(self):
         pass
