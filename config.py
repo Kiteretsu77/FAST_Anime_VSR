@@ -1,6 +1,5 @@
 import os
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"          # GPU device for inference
+os.environ["CUDA_VISIBLE_DEVICES"]="1"          # GPU device for inference
 
 
 class configuration:
@@ -10,20 +9,19 @@ class configuration:
     
     ######################################################  Frequently Edited Setting  #################################################### 
     scale = 1.5  # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
-    inp_path = r"C:\Users\HikariDawn\Desktop\videos"                   # intput path (can be a single video file or a folder directory with videos)
-    opt_path = r"C:\Users\HikariDawn\Desktop\videos_processed"         # storage path after processing all videos in inp_path (should only be a folder directory)
-    # 这里有个bug就是opt_path没有的时候，都是folder会有assert error
+    inp_path = r"/home/hiakaridawn2/Desktop/videos"                   # intput path (can be a single video file or a folder directory with videos)
+    opt_path = r"/home/hiakaridawn2/Desktop/videos_processed"         # storage path after processing all videos in inp_path (should only be a folder directory)
     decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
 
     # Multithread and Multiprocessing setting 
-    process_num = 1          # This is a Process number
+    process_num = 3          # This is a Process number
     full_model_num = 3       # Full frame thread instance number
     nt = 2                   # Partition frame (1/3 part of a frame) instance number 
 
     # Reference for my 3090Ti setting (almost full power)
-    # Input Size: process_num x (full_model_num + nt)
+    # Input Resolution: process_num x (full_model_num + nt)
     # 720P: 3 x (2 + 2)
-    # 540P: 2 x (3 + 2)
+    # 540P: 3 x (3 + 2)
     # 480P: 3 x (3 + 3)
     ######################################################################################################################################
 

@@ -15,6 +15,7 @@ from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
 from threading import Lock
 s_print_lock = Lock()
 
+# import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
 

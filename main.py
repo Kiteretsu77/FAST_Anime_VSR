@@ -3,13 +3,15 @@ import tensorrt
 from torch2trt import torch2trt
 import torch 
 
-import os, sys, collections
+import os, sys
 import shutil
-from config import configuration
 
-# import function from other files
-from single_process import parallel_process
-from mass_production import mass_process
+# import from local folder
+root_path_ = os.path.abspath('.')
+sys.path.append(root_path_)
+from config import configuration
+from process.single_process import parallel_process
+from process.mass_production import mass_process
 
 
 
@@ -26,23 +28,31 @@ def folder_prepare():
 def main():
     folder_prepare()
 
-    if os.path.isdir(configuration.inp_path):
+    input_path  = configuration.inp_path
+    output_path = configuration.opt_path
+
+    # Handle a whole directory
+    if os.path.isdir(input_path):
         # whole video folder process
-        if not os.path.isdir(configuration.opt_path):
+        if os.path.exists(output_path) and not os.path.isdir(output_path):
             print("The output folder is not an directory when the input folder is a folder")
             os._exit(0)
+        elif not os.path.exists(output_path):
+            print("The output directory doesn't exists, we will make one")
+            os.mkdir(output_path)       # It is better to ensure here that 
 
-        print(f"We are going to process all videos in {configuration.inp_path}")
-        mass_process(configuration.inp_path, configuration.opt_path)
+        print(f"We are going to process all videos in {input_path}")
+        mass_process(input_path, output_path)
 
-    elif os.path.exists(configuration.inp_path):
+    # Handle a single video
+    elif os.path.exists(input_path):
         # single video process
-        if os.path.isdir(configuration.opt_path):
+        if os.path.isdir(output_path):
             print("The output folder is a folder. This is an error")
             os._exit(0)
 
-        print(f"We are going to process single videos located at {configuration.inp_path}")
-        parallel_process(configuration.inp_path, configuration.opt_path, parallel_num=configuration.process_num)
+        print(f"We are going to process single videos located at {input_path}")
+        parallel_process(input_path, output_path, parallel_num=configuration.process_num)
 
     else:
         print("We didn't find such location exists!")

@@ -6,34 +6,26 @@ import torch
 
 from torch import nn as nn
 from torch.nn import functional as F
-from torchvision.models.alexnet import alexnet
 from time import time as ttime
 from torch2trt import TRTModule
-from moviepy.editor import VideoFileClip
-import collections
 import cv2
 import numpy as np
 import time
 import os, sys
-import threading
-from multiprocessing import Queue
 from time import time as ttime, sleep
 import argparse
 import shutil
 import requests
 
 
-# From local folder
+# Import from local folder
 root_path = os.path.abspath('.')
 sys.path.append(root_path)
+from config import configuration
 
 
 from Real_CuGAN.cunet import UNet1, UNet2, UNet_Full
 
-
-# setup gpu usage
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"    # 直接对device进行设定
 
 
 ######################################### helper function  #################################################################
@@ -219,10 +211,10 @@ class Generator:
                 mode = "float16"
                 input = input.half() 
                 unet_full = unet_full.half()
-                print("Generating ........")
+                print("Generating the TensorRT weight form ........")
                 unet_full_trt_model = torch2trt(unet_full, [input], fp16_mode=True)
 
-        print("Finish generating tensorRT weight")
+        print("Finish generating the tensorRT weight")
         torch.save(unet_full_trt_model.state_dict(), self.weight_store_dir + 'unet_full_weight_trt_' + base_name + '_'+mode+'.pth')
 
 
@@ -349,6 +341,8 @@ def check_file():
         r = requests.get(url, allow_redirects=True)
         open('weights/cunet_weight.pth', 'wb').write(r.content)
         # shutil.move('weights/cunet_weight.pth', 'weights/cunet_weight.pth')
+
+        print("Finish downloading!")
 
 
 def generate_weight(lr_h = 540, lr_width = 960):

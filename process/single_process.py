@@ -6,14 +6,16 @@ import torch
 import os, sys, collections
 import shutil, math
 from moviepy.editor import VideoFileClip
-from inference import VideoUpScaler
+from process.inference import VideoUpScaler
 from pathlib import Path
 from config import configuration
 from multiprocessing import Process
 
-# import functions from other file
+# import from local folder
+root_path_ = os.path.abspath('.')
+sys.path.append(root_path_)
 from weight_generation.weight_generator import generate_weight
-from utils import check_input_support
+from process.utils import check_input_support
 
 
 

@@ -3,9 +3,15 @@ import tensorrt
 from torch2trt import torch2trt
 import torch 
 # 上面三个不按照这个顺序就会有bug(主要是环境的bug)
-import os, time, argparse
+
+import os, time, sys
 from config import configuration
-from single_process import parallel_process
+
+
+# import from local folder
+root_path_ = os.path.abspath('.')
+sys.path.append(root_path_)
+from process.single_process import parallel_process
 
 
 def check_existence(dir, create=False):
