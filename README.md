@@ -6,7 +6,7 @@ I implement it in **TensorRT** version and utilized a frame division algorithm (
 In my **3060Ti** Desktop version, it can process <span style="color:red">**faster than the Real-Time Anime videos**</span>, which means that **when you finish watching the first Anime video, your second Anime SR video is already processed, and you just need to click it to continue watching the next one**.
 
 
-My ultimate goal is to directly utilize decode information in Video Codec as in this paper (https://arxiv.org/abs/1603.08968), so I use the word "**FAST**" at the beginning. This repository will be continuously maintained and developed.
+My ultimate goal is to directly utilize decode information in Video Codec as in this paper (https://arxiv.org/abs/1603.08968), so I use the word "**FAST**" at the beginning. **Though this repository can already process in real-time, this repository will be continuously maintained and developed.**
 
 
 **If you like this repository, you can give me a star (if you are willing). Feel free to report any problem to me.**
@@ -68,7 +68,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 # Run (Inference):
 1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Plaese follow instruction there.\
     &emsp;&emsp; 1. Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.\
-    &emsp;&emsp; 2. The input (inp_path) <span style="color:red"> can be a single video input or a folder with a bunch of videos </span> (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
+    &emsp;&emsp; 2. The input (inp_path) can be **a single video input** or **a folder with a bunch of videos** (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
 1. Run 
    ```bash
         python main.py
@@ -83,21 +83,20 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 
 <!-- 1. run "python mass_production.py" to process all videos inside a folder (needed to edit input_dir && store_dir)
    run "python main.py" to process just one single file (edit input and output directory in config.py by inp_path && store_dir) [**This mode doesn't use any multiprocessing**, so it's **much slower than mass_production.py**]
-    (Wait me to update parallel.py) -->
+    (Wait for me to update parallel.py) -->
 
-# Several things to be aware of:
 
 
 
 # Future Works:
-1. Support Real-ESRGAN ()
+1. Support Real-ESRGAN (Will refactor a lot of codes) && I also want to publish a smaller RRDB Network (with 7 blocks instead of 23 blocks) I trained.
 1. Provide PSNR && Visual Quality report in README.
-1. Provide all repository in English.
-1. Record a video for how to install TensorRT from scratch
+1. Provide all repositories in English.
+1. Record a video on how to install TensorRT from scratch.
 
 
 
 # Disclaimer:
-1. The sample image under tensorrt_weight_generator is just for faster implementation, I don't have copyright for that one. All rights are reserved to their original owners.
+1. The sample image under tensorrt_weight_generator is just for faster implementation, I don't have a copyright for that one. All rights are reserved to their original owners.
 1. My code is developed from Real-CUGAN github repository (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
 
