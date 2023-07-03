@@ -1,9 +1,4 @@
-'''
-cache_mode:
-0:使用cache缓存必要参数
-1:使用cache缓存必要参数，对cache进行8bit量化节省显存，带来小许延时增长
-2:不使用cache，耗时约为mode0的2倍，但是显存不受输入图像分辨率限制，tile_mode填得够大，1.5G显存可超任意比例
-'''
+
 import torch
 from torch import nn as nn
 from torch.nn import functional as F
