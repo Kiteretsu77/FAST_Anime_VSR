@@ -49,8 +49,8 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
     Please strictly Follow https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-zip \
     After finishing these steps, you should be able to "import tensorrt" in python (starts a new window to run this)\
     Some reminder:\
-        &emsp;&emsp;Don't forget adding PATH to environmental varialbe based on their requirement.\
-        &emsp;&emsp;Step6 in the document is not very needed.
+        &emsp;&emsp; Don't forget to add PATH to environmental variables based on their requirement.\
+        &emsp;&emsp; Step 6 in the document is not very needed.
 
 4. install torch2trt (<span style="color:red">Don't directly use pip install torch2trt</span>)\
     &emsp;&emsp; Follow https://nvidia-ai-iot.github.io/torch2trt/v0.2.0/getting_started.html   (I install **Without** plugins)\
@@ -66,17 +66,17 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 
 
 # Run (Inference):
-1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Plaese follow instruction there.\
+1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Please follow the instructions there.\
     &emsp;&emsp; 1. Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.\
     &emsp;&emsp; 2. The input (inp_path) can be **a single video input** or **a folder with a bunch of videos** (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
 1. Run 
    ```bash
         python main.py
    ```
-   PS:\
-   &emsp;&emsp;&emsp;1. The <span style="color:red">**original cunet weight** should be automatically downloaded </span> and **tensorrt transformed weight** should be generated automatically based on the video input height and weight. \
-   &emsp;&emsp;&emsp;2. Usually, if this is the first time you transform to a tensorrt weight, it may need to wait for a while for the program to generate tensorrt weight. \
-   &emsp;&emsp;&emsp;3. If the input source has any <span style="color:red">external subtitle</span>, it will also be extracted automtically and sealed back to the processed video at the end.
+   PS:
+    * The <span style="color:red">**original cunet weight** should be automatically downloaded </span> and **tensorrt transformed weight** should be generated automatically based on the video input height and weight. 
+    * Usually, if this is the first time you transform to a tensorrt weight, it may need to wait for a while for the program to generate tensorrt weight. 
+    * If the input source has any **external subtitle**, it will also be extracted automatically and sealed back to the processed video at the end.
 
 
 
