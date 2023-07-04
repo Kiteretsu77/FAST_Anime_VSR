@@ -33,8 +33,23 @@ def config_preprocess(params, config):
                 setattr(config, param, params[param])
                 print("Set new attr for " + param + " to be " + str(getattr(config, param)))
 
-    # check existence of input
-    check_existence(config.inp_path)
+    # # check existence of input
+    # check_existence(config.inp_path)
+
+
+def check_repeat_file(output_dir):
+    if os.path.exists("tmp/"):
+        shutil.rmtree("tmp/")
+    os.mkdir("tmp/")
+
+    # to avoid annoying Yes or No to delete files on cmd of FFMPEG
+    target_files = []
+    target_files.append(output_dir)
+
+    # Remove unnecessary files
+    for file in target_files:
+        if os.path.isfile(file):
+            os.remove(file)
 
 
 def weight_justify(config, video_input_dir):
@@ -42,11 +57,12 @@ def weight_justify(config, video_input_dir):
 
     # Find all supported resolution weight
     supported_res = collections.defaultdict(list)
-    for weight_name in os.listdir('weights/'):
-        if weight_name == "cunet_weight.pth":
+    for weight_name in os.listdir(os.path.join(configuration.weights_dir, configuration.model_name)):
+        if weight_name.find(configuration.architecture_name) != -1:
+            # jump pretrained weight pth
             continue
         infos = weight_name.split('_')
-        resolution = infos[4]
+        resolution = infos[1]
         width, height = resolution.split('X')
         supported_res[int(width)].append(int(height))
     print("Current supported input resolution for Super-Resolution is ", supported_res)
@@ -67,35 +83,20 @@ def weight_justify(config, video_input_dir):
         print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported in current folder!")
         print("We are going to generate the weight now!!!")
 
-        # Call weight generator
+        # Call TensorRT weight generator
         assert( h <= 1080 and w <= 1920 )
-        generate_weight(h, w)
+        generate_weight(h, w)               # It will automatically read model name we need
 
         print("Finish generating the weight!!!")
 
-    print("This resolution " + str(w) + "X" + str(h) +" is supported in weights/ folder!")
+    print("This resolution " + str(w) + "X" + str(h) +" is supported!")
 
     
-    # Edit the unet base name for existed weight
-    config.unet_full_name = str(w) + "X" + str(h)
-    config.unet_partition_name = str(w) + "X" + str(partition_height)
-    print("The full frame name is {} and partition frame name is {} ".format(config.unet_full_name, config.unet_partition_name))
+    # Edit the model base name for existed weight (This will be used in inference by directly accessing configuration)
+    configuration.model_full_name = str(w) + "X" + str(h)
+    configuration.model_partition_name = str(w) + "X" + str(partition_height)
+    # print("The full frame name is {} and partition frame name is {} ".format(configuration.model_full_name, configuration.model_partition_name))
 
-
-
-def check_repeat_file(output_dir):
-    if os.path.exists("tmp/"):
-        shutil.rmtree("tmp/")
-    os.mkdir("tmp/")
-
-    # to avoid annoying Yes or No to delete files on cmd of FFMPEG
-    target_files = []
-    target_files.append(output_dir)
-
-    # Remove unnecessary files
-    for file in target_files:
-        if os.path.isfile(file):
-            os.remove(file)
 
 
 def split_video(input_file, parallel_num):
@@ -153,37 +154,37 @@ def extract_subtitle(dir):
     os.system(ffmpeg_extract_subtitle_cmd)
     
 
-def parallel_process(input_dir, output_dir, parallel_num = 2):
+def parallel_process(input_path, output_path, parallel_num = 2):
     ''' Split video into several parts and super-resolve each seperately (This function will be called no matter what if the input is a single video or a foldder)
     Args:
-        input_dir (str): single video directory
-        output_dir (str): output directory
+        input_path (str): single video path
+        output_path (str): output path
         parallel_num (int): how many videos you want to process completely parallelly
     '''
     
     # Check file preparation
-    check_existence(input_dir)
-    check_repeat_file(output_dir)
-    video_format = check_input_support(input_dir)
+    check_existence(input_path)
+    check_repeat_file(output_path)
+    video_format = check_input_support(input_path)
     configuration.input_video_format = video_format
 
 
     # Prepare TensorRT weight (Detect this every time when you are processing a different video)
-    weight_justify(configuration, input_dir)
-
+    weight_justify(configuration, input_path)
+    print("The full frame name is {} and partition frame name is {} ".format(configuration.model_full_name, configuration.model_partition_name))
 
     # Extract subtitle automatically no matter if it has or not
-    extract_subtitle(input_dir)
+    extract_subtitle(input_path)
 
 
     # Split video to process parallel
-    parallel_configs = split_video(input_dir, parallel_num)
+    parallel_configs = split_video(input_path, parallel_num)
 
 
     ######################### Double Process ############################
     Processes = []
-    for i in range(parallel_num):
-        p1 = Process(target=single_process, args =(parallel_configs[i], ))
+    for process_id in range(parallel_num):
+        p1 = Process(target=single_process, args =(parallel_configs[process_id], process_id))
         p1.start()
         Processes.append(p1)
     print("All Processes Start")
@@ -196,20 +197,18 @@ def parallel_process(input_dir, output_dir, parallel_num = 2):
 
 
     # combine video together
-    combine_video(output_dir, parallel_num)
+    combine_video(output_path, parallel_num)
 
 
 
-def single_process(params = None):
-    # root_path = os.path.abspath('.')
-    # sys.path.append(root_path)
+def single_process(params, process_id):
 
     # Preprocess to edit params to the newest version we need
     config_preprocess(params, configuration)
 
 
     # TODO: 我觉得这里应该直接读取video height和width然后直接选择模型，不然每次自己手动很麻烦
-    video_upscaler = VideoUpScaler(configuration)
+    video_upscaler = VideoUpScaler(configuration, process_id)
     print("="*100)
     print("Current Processing file is ", configuration.inp_path)
     report = video_upscaler(configuration.inp_path, configuration.opt_path)

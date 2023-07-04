@@ -6,7 +6,8 @@ import os, sys
 import shutil
 import collections
 from moviepy.editor import VideoFileClip
-
+# import multiprocessing
+# multiprocessing.set_start_method('spawn')
 
 # import from local folder
 root_path_ = os.path.abspath('.')
@@ -16,14 +17,17 @@ from process.single_process import parallel_process
 from process.mass_production import mass_process
 
 
-
 def folder_prepare():
     if os.path.exists("tmp/"):
         shutil.rmtree("tmp/")
     os.mkdir("tmp/")
 
-    if not os.path.exists("weights/"):
-        os.mkdir("weights/")
+    if not os.path.exists(configuration.weights_dir):
+        os.mkdir(configuration.weights_dir)
+    
+    folder_dir = os.path.join(configuration.weights_dir, configuration.model_name)
+    if not os.path.exists(folder_dir):
+        os.mkdir(folder_dir)
  
 
 

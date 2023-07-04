@@ -19,14 +19,13 @@ from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
 
 class UpScalerMT(threading.Thread):
     
-    def __init__(self, id, inp_q, res_q, device, model, p_sleep, nt):
+    def __init__(self, id, inp_q, res_q, model, p_sleep, nt):
         '''
             Multi-Thread Processing
         '''
         # threading.Thread.__init__(self)
         super(UpScalerMT, self).__init__()
         self.id = id
-        self.device = device
         self.inp_q = inp_q
         self.res_q = res_q
         self.model = model
@@ -62,7 +61,7 @@ class UpScalerMT(threading.Thread):
         idx, position, np_frame = tmp
 
         
-        ####################### RealCuGAN Execuation ############################
+        ####################### Neural Network Model Execuation ###########################
         full_exe_start_time = ttime()
 
         try:
@@ -74,7 +73,7 @@ class UpScalerMT(threading.Thread):
 
         full_exe_end_time = ttime()
         full_exe_time_spent = full_exe_end_time - full_exe_start_time
-        #########################################################################
+        ####################################################################################
 
         self.total_cost_time += full_exe_time_spent
         self.total_counter_ += 1
@@ -88,7 +87,6 @@ class UpScalerMT(threading.Thread):
     def run(self):
         while True:
             tmp = self.inp_q.get()
-            # print(self.device + " inp_q size is ", self.inp_q.qsize())
             if tmp == None:
                 break
 
@@ -100,13 +98,12 @@ class UpScalerMT(threading.Thread):
 
 
 class VideoUpScaler(object):
-    def __init__(self, configuration):
+    def __init__(self, configuration, process_id = 0):
 
         ###################################### Important Params ##################################################################################
         self.writer = None    # Used in Call function
         self.nt = configuration.nt
         self.scale = configuration.scale
-        self.n_gpu = configuration.n_gpu  # number of threads that each GPU use
         self.encode_params = configuration.encode_params
         self.decode_sleep = configuration.decode_sleep
         self.now_idx = 0
@@ -114,26 +111,29 @@ class VideoUpScaler(object):
         self.total_frame_number = 0
         self.decode_fps = configuration.decode_fps
         self.height = None
-        self.device = configuration.device
+        self.process_id = process_id
+        print("This process id is ", self.process_id)
 
         if configuration.full_model_num == 0:
-            self.max_cache_loop = max(int((configuration.nt + configuration.full_model_num) * configuration.n_gpu * configuration.Queue_hyper_param),
-                                      int(2 * configuration.n_gpu * configuration.Queue_hyper_param))
+            self.max_cache_loop = max(int((configuration.nt + configuration.full_model_num) * configuration.Queue_hyper_param),
+                                      int(2 * configuration.Queue_hyper_param))
         else:
-            self.max_cache_loop = max(int((configuration.nt//3 + configuration.full_model_num) * configuration.n_gpu * configuration.Queue_hyper_param),
-                                            int(2 * configuration.n_gpu * configuration.Queue_hyper_param))
+            self.max_cache_loop = max(int((configuration.nt//3 + configuration.full_model_num) * configuration.Queue_hyper_param),
+                                            int(2 * configuration.Queue_hyper_param))
         print("max_cache_loop size is ", self.max_cache_loop)
         #################################################################################################################################
 
-        ################################### Load model #############################################################################
-        self.check_weight_support()
-
-        # Unet full and partition name setup
-        unet_full_path_partition = "weights/unet_full_weight_trt_" + configuration.unet_partition_name + "_float16.pth"
+        ################################### Load model ##################################################################################
+        # TODO: we should support more than float16 cases
+        # Model full and partition weight path setup
+        weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + configuration.model_partition_name + '_float16_weight.pth')
         if configuration.full_model_num != 0:
-            unet_full_path_full_frame = "weights/unet_full_weight_trt_" + configuration.unet_full_name + "_float16.pth"
-        # print("unet_full_name {} and unet_partition_name is {} ".format(unet_full_path_full_frame, unet_full_path_partition))
-        ############################################################################################################################
+            weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + configuration.model_full_name + '_float16_weight.pth')
+        
+        if not os.path.exists(weight_path_full_path) or not os.path.exists(weight_path_partition_path):
+            print(weight_path_full_path, weight_path_partition_path)
+            os._exit(0)
+        #################################################################################################################################
 
         ######################## Similar frame optimization #######################
         self.skip_counter_ = 0
@@ -145,7 +145,7 @@ class VideoUpScaler(object):
         self.mse_learning_rate = configuration.mse_learning_rate
         ############################################################################
 
-        ########################## Image Crop & Momentum ##########################################################################
+        ########################## Image Crop & Momentum ##################################################################################
         self.adjust = configuration.adjust
         self.left_mid_right_diff = configuration.left_mid_right_diff # 这个理解起来就是第一个最右/下侧多2， 中间两边都少2（同少4），最后一个左/上边多2
 
@@ -157,25 +157,25 @@ class VideoUpScaler(object):
         self.times2switchFULL = 0
         self.momentum_used_num = 0
         self.momentum_reference = collections.deque([False]*self.momentum_reference_size, maxlen=self.momentum_reference_size)
-        ############################################################################################################################
+        ###################################################################################################################################
 
         ############################### MultiThread And MultiProcess #####################################################
         # Full Frame
         self.inp_q_full = None
         if configuration.full_model_num != 0:
-            Full_Frame_Queue_size = int( (self.full_model_num + 1) * self.n_gpu * configuration.Queue_hyper_param)
+            Full_Frame_Queue_size = int( (self.full_model_num + 1) * configuration.Queue_hyper_param)
             self.inp_q_full = Queue(Full_Frame_Queue_size) # queue of full frame
             print("Total FUll Queue size is ", Full_Frame_Queue_size)
 
         # Sub Frame 
         self.inp_q = None
         if self.nt != 0:
-            Divided_Block_Queue_size = int( (self.nt) * self.n_gpu * configuration.Queue_hyper_param//2)
+            Divided_Block_Queue_size = int( (self.nt) * configuration.Queue_hyper_param//2)
             print("Total Divided_Block_Queue_size is ", Divided_Block_Queue_size)
             self.inp_q = Queue(Divided_Block_Queue_size)  # 抽帧缓存上限帧数
         
         # In total
-        Res_q_size = int( (self.nt + self.full_model_num) * self.n_gpu * configuration.Queue_hyper_param//2)
+        Res_q_size = int( (self.nt + self.full_model_num) * configuration.Queue_hyper_param//2)
         print("res_q size is ", Res_q_size)
         self.res_q = Queue(Res_q_size)  # Super-Resolved Frames Cache
         self.idx2res = collections.defaultdict(dict)
@@ -183,21 +183,51 @@ class VideoUpScaler(object):
 
 
         ############################# Model Preparation ####################################################################
-        # Full Frame Model
-        for _ in range(self.full_model_num):
-            model = RealCuGAN_Scalar(unet_full_path_full_frame, self.device, self.adjust)
-            upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, "full", model, configuration.p_sleep, 1)
-            upscaler_full.start()
+        if configuration.model_name == "Real-ESRGAN":
+            from Real_ESRGAN.uprrdb_main import RealESRGAN_Scalar
+            # Full Frame Model
+            print("Full Model Preparation")
+            for idx in range(self.full_model_num):
+                print(configuration.model_name + " full : " + str(idx))
+                model = RealESRGAN_Scalar(weight_path_full_path, self.adjust)
+                print("pass model init")
+                upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
+                upscaler_full.start()
+                print("pass UpScalerMT start")
 
-        # Partition Frame Model
-        for id in range(self.nt):
-            model = RealCuGAN_Scalar(unet_full_path_partition, self.device, self.adjust)
-            upscaler = UpScalerMT(id, self.inp_q, self.res_q, self.device, model, configuration.p_sleep, self.nt)
-            upscaler.start()
+            # Partition Frame Model
+            print("Partition Model Preparation")
+            for id in range(self.nt):
+                print(configuration.model_name + " partition : " + str(id))
+                model = RealESRGAN_Scalar(weight_path_partition_path, self.adjust)
+                upscaler = UpScalerMT(id, self.inp_q, self.res_q, model, configuration.p_sleep, self.nt)
+                upscaler.start()
+
+
+        elif configuration.model_name == "Real-CUGAN":
+            
+            for idx in range(self.full_model_num):
+                print(configuration.model_name + " full : " + str(idx))
+                model = RealCuGAN_Scalar(weight_path_full_path, self.adjust)
+                print("pass model init")
+                upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
+                upscaler_full.start()
+                print("pass UpScalerMT start")
+                
+            # Partition Frame Model
+            print("Partition Model Preparation")
+            for id in range(self.nt):
+                print(configuration.model_name + " partition : " + str(id))
+                model = RealCuGAN_Scalar(weight_path_partition_path, self.adjust)
+                upscaler = UpScalerMT(id, self.inp_q, self.res_q, model, configuration.p_sleep, self.nt)
+                upscaler.start()
+
+        else:
+            print("This model_name is not supported ", configuration.model_name)
+            os._exit(0)
+
+        
         ######################################################################################################################
-
-    def check_weight_support(self):
-        pass
 
     def frame_write(self):
         # 从res_q中提取内容， 并整合成一张大图内容
@@ -234,7 +264,7 @@ class VideoUpScaler(object):
 
             #############################################下面确保了frame的所有部分都是在的################################################
             if self.now_idx % 50 == 0:
-                print("Had Written frames:%s" %self.now_idx)
+                print("Process {} had written frames: {}".format(self.process_id, self.now_idx))
 
             # 3种类型的crop处理
             if 3 not in self.idx2res[self.now_idx]:
@@ -498,9 +528,9 @@ class VideoUpScaler(object):
 
         print("Final image index is ", self.now_idx)
 
-        for _ in range(self.nt * self.n_gpu):  # 全部结果拿到后，关掉模型线程
+        for _ in range(self.nt):  # 全部结果拿到后，关掉模型线程
             self.inp_q.put(None)
-        for _ in range(self.full_model_num  * self.n_gpu):
+        for _ in range(self.full_model_num):
             self.inp_q_full.put(None)
 
         # close writer to save all stuff

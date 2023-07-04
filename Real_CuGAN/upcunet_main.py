@@ -6,12 +6,14 @@ from time import time as ttime
 import numpy as np
 import os, sys
 
-
+# import files from local folder
 root_path = os.path.abspath('.')
 sys.path.append(root_path)
+from process.utils import np2tensor, tensor2np
+
 
 class UpCunet2x(nn.Module):
-    def __init__(self, unet_full_weight_path, device_name, adjust):
+    def __init__(self, unet_full_weight_path, adjust):
         super(UpCunet2x, self).__init__()
         load_start = ttime()
 
@@ -19,10 +21,10 @@ class UpCunet2x(nn.Module):
         torch.cuda.empty_cache()
         self.unet_model_full = TRTModule()
 
-        
+        print("unet_full_weight_path is ", unet_full_weight_path)
         self.unet_model_full.load_state_dict(torch.load(unet_full_weight_path))
-        # self.unet_model_full.eval().cuda()
-
+        # don't use .eval().cuda() because it will raise a bug
+        print("step finish!")
         for param in self.unet_model_full.parameters():
             param.grad = None
 
@@ -55,41 +57,28 @@ class UpCunet2x(nn.Module):
         else:
             print("Error Type!")
 
-
-
         # TODO: 想办法加check是否是奇数的情况
         # 目前默认是pro mode (pro跟weight有关)
         return ((x - 0.15) * (255/0.7)).round().clamp_(0, 255).byte()
 
         
-
     
 class RealCuGAN_Scalar(object):
-    def __init__(self, unet_full_weight_path, device_name, adjust):
-        self.model = UpCunet2x(unet_full_weight_path, device_name, adjust)
+    def __init__(self, unet_full_weight_path, adjust):
+        self.model = UpCunet2x(unet_full_weight_path, adjust).half()
         self.inner_times = 0
         self.counter = 0
-        self.device_name = device_name
 
     def __del__(self):
         # if self.counter:
         #     print("Inner time is %.2f s on %d, which is %.5f s per frame"%(self.inner_times, self.counter, self.inner_times/self.counter))
         return
 
-    def tensor2np(self, tensor):
-        # 这边看看还有没有什么能够提升的点，耗时实在太长了
-        return (np.transpose(tensor.squeeze().cpu().numpy(), (1, 2, 0)))
-
-    def np2tensor(self, np_frame):
-        # return torch.from_numpy(np.transpose(np_frame, (2, 0, 1))).unsqueeze(0).to(self.device).float() / 255
-        ###### pro mode
-        return torch.from_numpy(np.transpose(np_frame, (2, 0, 1))).unsqueeze(0).cuda().half() / (255 / 0.7) + 0.15 
-
 
     def __call__(self, frame, position):
         #Q： 试一下这个torch.no_grad是不是有点多余
         # with torch.no_grad():
-        tensor = self.np2tensor(frame)
+        tensor = np2tensor(frame, pro=True).half()
         s = ttime()
 
         res = self.model(tensor, position)
@@ -100,5 +89,5 @@ class RealCuGAN_Scalar(object):
         self.inner_times += spent
 
 
-        result = self.tensor2np(res)
+        result = tensor2np(res)
         return result

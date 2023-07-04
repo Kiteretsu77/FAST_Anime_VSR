@@ -1,4 +1,7 @@
 import os
+import numpy as np
+import torch
+
 
 def check_input_support(file):
     lists = file.split('.')
@@ -28,3 +31,14 @@ def sec2foramt(time):
 
     format = hour + ":" + minute + ":" + sec
     return format
+
+
+def tensor2np(tensor):
+    return (np.transpose(tensor.squeeze().cpu().numpy(), (1, 2, 0)))    # tensor is already multiplied by 255
+
+def np2tensor(np_frame, pro):
+    if pro:
+        return torch.from_numpy(np.transpose(np_frame, (2, 0, 1))).unsqueeze(0).cuda().float() / (255 / 0.7) + 0.15
+    else:
+        return torch.from_numpy(np.transpose(np_frame, (2, 0, 1))).unsqueeze(0).cuda().float() / 255.0
+    

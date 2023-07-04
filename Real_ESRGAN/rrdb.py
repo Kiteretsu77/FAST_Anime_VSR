@@ -11,6 +11,10 @@ from torch.nn import init as init
 from torch.nn.modules.batchnorm import _BatchNorm
 
 
+root_path_ = os.path.abspath('.')
+sys.path.append(root_path_)
+import Real_ESRGAN.torch2trt_fix    # For the bug override, don't delete it
+
 def pixel_unshuffle(x, scale):
     """ Pixel unshuffle.
 
@@ -151,8 +155,8 @@ class RRDBNet(nn.Module):
         num_grow_ch (int): Channels for each growth. Default: 32.
     """
 
-    def __init__(self, num_in_ch, num_out_ch, scale=2, num_feat=64, num_block=23, num_grow_ch=32):
-        # shllow block (差不多砍半)
+    def __init__(self, num_in_ch=3, num_out_ch=3, scale=2, num_feat=64, num_block=23, num_grow_ch=32):
+        # shllow blocks (it was 23 in the original paper)
         num_block = 7
 
         super(RRDBNet, self).__init__()

@@ -20,9 +20,11 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 ![compare2](figures/processed.png)
 
 
-# Supported Devices:
+# Supported Devices and Language:
 1. Nvidia GPU with Cuda (Tested: 3060Ti, 3090Ti, 4090)
-
+2. Tested on Python 3.10
+&emsp;&emsp; \
+&emsp;&emsp; 
 
 # Installation (**Linux - Ubuntu**)：
 1. Install CUDA  (The document says that Cudnn is now optional, and I tested that, without Cudnn, it is still runnable)
@@ -30,12 +32,12 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
     ```bash
         pip install tensorrt
     ```
-&emsp;&emsp; PS: The document says: the Python Package Index installation does not and only supports CUDA 12.x in this release.\
-&emsp;&emsp;&emsp;&emsp;For more details, please read https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-pip\
+   * The document says: the Python Package Index installation does not and only supports CUDA 12.x in this release.\
+   * For more details, please read https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-pip\
    
 3. Install torch2trt (<span style="color:red">Don't directly use pip install torch2trt</span>)\
-    &emsp;&emsp; Follow https://nvidia-ai-iot.github.io/torch2trt/v0.2.0/getting_started.html   (I install **Without** plugins)\
-    &emsp;&emsp; After installing it, you should be able to run "import torch2trt" in python (**start a new window** to run this)
+    * Follow https://nvidia-ai-iot.github.io/torch2trt/v0.2.0/getting_started.html   (I install **Without** plugins)\
+    * After installing it, you should be able to run "import torch2trt" in python (**start a new window** to run this)
 4. Install basic libraries for python 
     ```bash
         pip install -r requirements.txt
@@ -45,16 +47,15 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 # Installation (**Windows**)：
 1. Install CUDA (Mine: 11.7)
 2. Install Cudnn (8.6, I strongly recommend this version!)
-3. Install tensorrt (<span style="color:red">Don't directly use python install</span>) \
-    Please strictly Follow https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-zip \
-    After finishing these steps, you should be able to "import tensorrt" in python (starts a new window to run this)\
-    Some reminder:\
-        &emsp;&emsp; Don't forget to add PATH to environmental variables based on their requirement.\
-        &emsp;&emsp; Step 6 in the document is not very needed.
-
-4. install torch2trt (<span style="color:red">Don't directly use pip install torch2trt</span>)\
-    &emsp;&emsp; Follow https://nvidia-ai-iot.github.io/torch2trt/v0.2.0/getting_started.html   (I install **Without** plugins)\
-    &emsp;&emsp; After installing it, you should be able to run "import torch2trt" in python (**start a new window** to run this)
+3. Install tensorrt (<span style="color:red">Don't directly use python install</span>) 
+    * Please strictly Follow https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-zip 
+    * After finishing these steps, you should be able to "import tensorrt" in python (starts a new window to run this)
+    * Don't forget to add PATH to environmental variables based on their requirement.
+    * Step 6 in the document is not very needed.
+  
+4. Install torch2trt (<span style="color:red">Don't directly use pip install torch2trt</span>)
+    * Follow https://nvidia-ai-iot.github.io/torch2trt/v0.2.0/getting_started.html   (I install **Without** plugins)
+    * After installing it, you should be able to run "import torch2trt" in python (**start a new window** to run this)
 
 5. Install basic libraries for python 
     ```bash
@@ -67,32 +68,24 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 
 # Run (Inference):
 1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Please follow the instructions there.\
-    &emsp;&emsp; 1. Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.\
-    &emsp;&emsp; 2. The input (inp_path) can be **a single video input** or **a folder with a bunch of videos** (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
-1. Run 
+    * Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.\
+    * The input (inp_path) can be **a single video input** or **a folder with a bunch of videos** (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
+2. Run 
    ```bash
         python main.py
    ```
-   PS:
     * The <span style="color:red">**original cunet weight** should be automatically downloaded </span> and **tensorrt transformed weight** should be generated automatically based on the video input height and weight. 
     * Usually, if this is the first time you transform to a tensorrt weight, it may need to wait for a while for the program to generate tensorrt weight. 
     * If the input source has any **external subtitle**, it will also be extracted automatically and sealed back to the processed video at the end.
 
 
 
-
-<!-- 1. run "python mass_production.py" to process all videos inside a folder (needed to edit input_dir && store_dir)
-   run "python main.py" to process just one single file (edit input and output directory in config.py by inp_path && store_dir) [**This mode doesn't use any multiprocessing**, so it's **much slower than mass_production.py**]
-    (Wait for me to update parallel.py) -->
-
-
-
-
 # Future Works:
 1. Support Real-ESRGAN (Will refactor a lot of codes) && I also want to publish a smaller RRDB Network (with 7 blocks instead of 23 blocks) I trained.
-1. Provide PSNR && Visual Quality report in README.
-1. Provide all repositories in English.
-1. Record a video on how to install TensorRT from scratch.
+1. MultiGPU support
+2. Provide PSNR && Visual Quality report in README.
+3. Provide all repositories in English.
+4. Record a video on how to install TensorRT from scratch.
 
 
 

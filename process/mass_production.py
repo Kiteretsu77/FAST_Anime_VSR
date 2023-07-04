@@ -30,24 +30,23 @@ def mass_process(input_folder_dir, output_dir_parent):
         target_name = ''.join(lists[:-1])
 
 
-        # Find name of input and ouput
+        # Find the name of input and ouput
         input_name = os.path.join(input_folder_dir, file)
         output_name = os.path.join(output_dir_parent, target_name + "_processed.mp4")
         print("We are super resolving {} and we will save it at {}".format(input_name, output_name))
 
 
         # Process the video
+        # TODO: 利用log的report看看要不要减少partition的thread数量，毕竟相同视频类型都是相似的
         start = time.time()
 
-
         parallel_process(input_name, output_name, parallel_num=configuration.process_num)
-
 
         full_time_spent = int(time.time() - start)
         print("Total time spent for this video is %d min %d s" %(full_time_spent//60, full_time_spent%60))
 
-        # TODO: 利用log的report看看要不要减少partition的thread数量，毕竟相同视频类型都是相似的
 
+        # After Processing
         print("After finish one thing, sleep for a moment!")
         time.sleep(5)
     os._exit(0)
