@@ -1,59 +1,60 @@
-import sys
+import sys, os
 from moviepy.editor import *
+import cv2
+from torchvision.transforms import ToTensor
+from torchvision.utils import save_image
+from torch2trt import TRTModule
+import torch
+import numpy as np
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 
-def sec2foramt(time):
-
-    time = int(time)
-    sec = str(time%60)
-    sec = "0"*(2-len(sec)) + sec
-
-    time = time//60
-    minute = str(time%60)
-    minute = "0"*(2-len(minute)) + minute
-
-    time = time//60
-    hour = str(time%60)
-    hour = "0"*(2-len(hour)) + hour
+# Test if RealESRGAN can support low resolution (1in3) input
+root_path = os.path.abspath('.')
+sys.path.append(root_path)
+from process.utils import np2tensor, tensor2np
+from Real_ESRGAN.rrdb import RRDBNet
 
 
-
-    format = hour + ":" + minute + ":" + sec
-    return format
-
-
-
-input_file = r"C:\Users\hikar\Desktop\anime_src\video2.mp4"
-clip = VideoFileClip(input_file)
-print(clip.duration)
-
-divide_time = int(clip.duration // 2)
-middle_time = sec2foramt(divide_time)
-
-ffmpeg_cmd1 = "ffmpeg -ss 00:00:00 -to " + middle_time + " -accurate_seek -i " + input_file +  " -codec copy -avoid_negative_ts 1 tmp/part1.mp4"
-os.system(ffmpeg_cmd1)
-
-ffmpeg_cmd2 = "ffmpeg -ss " + middle_time + " -accurate_seek -i " + input_file +  " -codec copy -avoid_negative_ts 1 tmp/part2.mp4"
-os.system(ffmpeg_cmd2)
+height = 248
+pretrained = False
 
 
 
+# Load model
+if pretrained:
+    rrdb_model = RRDBNet().cuda()
+    model_weight = torch.load("weights/Real-ESRGAN/rrdb_weight.pth")
+    model_weight = model_weight['model_state_dict']
+else:
+    rrdb_model = TRTModule()
+    model_weight = torch.load("weights/Real-ESRGAN/trt_1280X"+str(height)+"_float16_weight.pth")
 
-output_name1 = "part1.mp4"
-output_name2 = "part2.mp4"
-if os.path.isfile("tmp/target.txt"):
-    os.remove("tmp/target.txt")
-if os.path.isfile("tmp/output.mp4"):
-    os.remove("tmp/output.mp4")
 
-file = open("tmp/target.txt", "a")
-file.write("file part1.mp4\n")
-file.write("file part2.mp4")
-file.close()
-target_output = "tmp/output.mp4"
+rrdb_model.load_state_dict(model_weight)
+for param in rrdb_model.parameters():
+    param.grad = None
 
-ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt -c copy " + target_output
-os.system(ffmpeg_combine_cmd)
 
+# Extract frames
+objVideoreader = VideoFileClip(filename="/home/hiakaridawn2/Desktop/videos/test.mp4")
+for idx, frame in enumerate(objVideoreader.iter_frames()):
+    print(idx)
+    if idx == 10:
+        break
+
+    # crop the frame
+    img = frame[:height, :, :]
+
+
+    img = ToTensor()(img).unsqueeze(0).cuda()
+    if not pretrained:
+        img = img.half()
+    
+
+    # generate the output
+    img = rrdb_model(img)
+
+    save_image(img, str(idx) + ".png")
 
 

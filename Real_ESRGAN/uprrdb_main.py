@@ -63,6 +63,7 @@ class UpRRDB2x(nn.Module):
         
     
 class RealESRGAN_Scalar(object):
+    
     def __init__(self, rrdb_weight_path, adjust):
         self.model = UpRRDB2x(rrdb_weight_path, adjust).half()
         self.inner_times = 0

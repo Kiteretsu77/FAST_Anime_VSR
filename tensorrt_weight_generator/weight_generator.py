@@ -6,6 +6,7 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 from torch2trt import TRTModule
+from torchvision.transforms import ToTensor
 
 from time import time as ttime
 import cv2
@@ -22,7 +23,7 @@ import requests
 root_path = os.path.abspath('.')
 sys.path.append(root_path)
 from config import configuration
-from process.utils import np2tensor, tensor2np
+from process.utils import np2tensor
 
 
 
@@ -50,16 +51,15 @@ class Generator:
 
     def cunet_pre_process(self, array):
         # Don't forget this np2tensor
-        # if not self.dont_calculate_transform:
         tensor = np2tensor(array, pro=True)
+        # tensor = ToTensor()(array).unsqueeze(0).cuda()
         input = F.pad(tensor, (18, 18, 18, 18), 'reflect').cuda()  # pad最后一个倒数第二个dim各上下18个（总计36个）
 
-
-        # print("After pre-process, the shape is ", input.shape)
         return input
     
     def rrdb_preprocess(self, array):
-        tensor = np2tensor(array, pro=False).cuda()
+        # RRDB just directly use ToTensor, which is different from cunnet preprocess
+        tensor = np2tensor(array, pro=False)
 
         return tensor
 

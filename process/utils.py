@@ -1,6 +1,9 @@
 import os
 import numpy as np
 import torch
+from torchvision.transforms import ToTensor
+from torchvision.utils import save_image
+
 
 
 def check_input_support(file):
@@ -34,11 +37,12 @@ def sec2foramt(time):
 
 
 def tensor2np(tensor):
-    return (np.transpose(tensor.squeeze().cpu().numpy(), (1, 2, 0)))    # tensor is already multiplied by 255
+    return np.transpose(tensor.squeeze().cpu().detach().numpy(), (1, 2, 0))    # tensor is already multiplied by 255
 
 def np2tensor(np_frame, pro):
+    tensor = ToTensor()(np_frame).unsqueeze(0).cuda()
     if pro:
-        return torch.from_numpy(np.transpose(np_frame, (2, 0, 1))).unsqueeze(0).cuda().float() / (255 / 0.7) + 0.15
+        return tensor * 0.7 + 0.15 # Was / (255 / 0.7) + 0.15
     else:
-        return torch.from_numpy(np.transpose(np_frame, (2, 0, 1))).unsqueeze(0).cuda().float() / 255.0
+        return tensor
     

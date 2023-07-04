@@ -127,12 +127,11 @@ class VideoUpScaler(object):
         # TODO: we should support more than float16 cases
         # Model full and partition weight path setup
         weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + configuration.model_partition_name + '_float16_weight.pth')
+        assert(os.path.exists(weight_path_partition_path))
         if configuration.full_model_num != 0:
             weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + configuration.model_full_name + '_float16_weight.pth')
-        
-        if not os.path.exists(weight_path_full_path) or not os.path.exists(weight_path_partition_path):
-            print(weight_path_full_path, weight_path_partition_path)
-            os._exit(0)
+            assert(os.path.exists(weight_path_full_path))
+
         #################################################################################################################################
 
         ######################## Similar frame optimization #######################
@@ -349,27 +348,31 @@ class VideoUpScaler(object):
 
     def __call__(self, input_path, output_path):
         ############################### Build PATH && INIT ############################################
+        # Basic Path Preparation
         video_format = input_path.split(".")[-1]
         os.makedirs(os.path.join(root_path_, "tmp"), exist_ok=True)
         tmp_path = os.path.join(root_path_, "tmp", "%s.%s" % (int(ttime()*1000000), video_format))
         os.link(input_path, tmp_path)
         objVideoreader = VideoFileClip(filename=tmp_path)
+
+        # Obtain basic video information
+        total_duration = objVideoreader.duration
         self.width, self.height = objVideoreader.reader.size
-        # scale = 1的adjust放在了writer init后面
+        original_fps = objVideoreader.reader.fps
+        nframes = objVideoreader.reader.nframes
+        has_audio = objVideoreader.audio
 
 
-        fps = objVideoreader.reader.fps
         if self.decode_fps == -1:
             # use original fps as decode fps
-            self.decode_fps = fps
-        self.total_frame_number = int(self.decode_fps * (objVideoreader.reader.nframes/fps))
-        if_audio = objVideoreader.audio
+            self.decode_fps = original_fps
+        self.total_frame_number = int(self.decode_fps * (nframes/original_fps))
         #############################################################################################
 
         
 
         ################################### Build Video Writer ########################################################################################
-        if if_audio:
+        if has_audio:
             tmp_audio_path = "%s.m4a" % tmp_path
             objVideoreader.audio.write_audiofile(tmp_audio_path, codec="aac")
             # 得到的writer先给予audio然后再一帧一帧的写frame
@@ -535,38 +538,42 @@ class VideoUpScaler(object):
 
         # close writer to save all stuff
         self.writer.close()
-        if if_audio:
+        if has_audio:
             os.remove(tmp_audio_path)
         
-        # os.remove(tmp_path)  # 把视频都暂时link到tmp文件中，最后还是要删的
 
+        # os.remove(tmp_path)  # 把视频都暂时link到tmp文件中，最后还是要删的  <=== I forgot what is this for
         video_decode_loop_end = ttime()
         ################################################################################################################
 
         ##################################### 分析汇总 ##################################################################
-
+        # Calculation
         full_time_spent = video_decode_loop_end - video_decode_loop_start
         total_exe_fps = self.total_frame_number / full_time_spent
         full_frame_portion = self.full_frame_cal_num / self.total_frame_number
         partition_saved_portion = self.skip_counter_/(self.total_frame_number*3)
-        
+
+        # The most import report        
         print("Input path is %s and the report is the following:"%input_path)
         if full_time_spent < 60:
             print("Done! Total time cost:", full_time_spent)
         else:
             print("Done! Total time cost: %d min %d s" %(full_time_spent//60, full_time_spent%60))
-        print("Counting Saved frame, the fps is %.2f which is %.2f scale on fps" %(total_exe_fps, total_exe_fps/self.decode_fps))
-        print("The Number of partitions put into small Upscaler is %d which is %.2f %%" % (
+        # print("The total duration is ", total_duration)
+        # print("The scaling of processing_time/total_video_duration is {} %".format((full_time_spent/total_duration) * 100))
+
+        # Details report
+        print("The following is the detailed report:")
+        print("\t The Number of partitions put into small Upscaler (1in3) is %d which is %.2f %%" % (
                 self.parition_processed_num, 100 * self.parition_processed_num / (self.total_frame_number * 3)))
-        print("Saved frames number: %d partitions which is %.2f %%" %(self.skip_counter_, 100*partition_saved_portion))
+        print("\t Saved frames number: %d partitions which is %.2f %%" %(self.skip_counter_, 100*partition_saved_portion))
         # print("mse_total_spent %.3f s"%(mse_total_spent))
-        print("Total full_frame_cal_num is %.2f which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
-        print("Total momentum used num is ", self.momentum_used_num)
+        print("\t Total full_frame_cal_num is %.2f which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
+        print("\t Total momentum used num is ", self.momentum_used_num)
         ################################################################################################################
         
 
         ##################################### Generate Final Report ####################################################
-
         report = {}
         report["input_path"] = input_path
         report["full_time_spent"] = full_time_spent

@@ -197,6 +197,8 @@ def parallel_process(input_path, output_path, parallel_num = 2):
     full_time_spent = int(time.time() - start_time)
     print("Total time spent for this video is %d min %d s" %(full_time_spent//60, full_time_spent%60))
     ####################################################################################################
+    total_duration = VideoFileClip(input_path).duration
+    print("The scaling of processing_time/total_video_duration is {} %".format((full_time_spent/total_duration) * 100))
 
 
     # combine video together

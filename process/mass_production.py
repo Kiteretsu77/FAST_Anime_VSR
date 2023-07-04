@@ -5,7 +5,7 @@ from config import configuration
 # import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
-from process.single_process import parallel_process
+from process.single_video import parallel_process
 
 
 def check_existence(dir, create=False):

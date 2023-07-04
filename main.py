@@ -13,7 +13,7 @@ from moviepy.editor import VideoFileClip
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
 from config import configuration
-from process.single_process import parallel_process
+from process.single_video import parallel_process
 from process.mass_production import mass_process
 
 

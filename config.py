@@ -21,7 +21,7 @@ class configuration:
     decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
 
     # Multithread and Multiprocessing setting 
-    process_num = 1          # This is the fully parallel Process number
+    process_num = 3          # This is the fully parallel Process number
     full_model_num = 2       # Full frame thread instance number
     nt = 2                   # Partition frame (1/3 part of a frame) instance number 
 
