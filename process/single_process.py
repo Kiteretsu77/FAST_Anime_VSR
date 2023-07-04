@@ -2,7 +2,7 @@ import tensorrt
 from torch2trt import torch2trt
 import torch 
 
-import os, sys, collections
+import os, sys, collections, time
 import shutil, math
 from moviepy.editor import VideoFileClip
 from process.inference import VideoUpScaler
@@ -181,7 +181,8 @@ def parallel_process(input_path, output_path, parallel_num = 2):
     parallel_configs = split_video(input_path, parallel_num)
 
 
-    ######################### Double Process ############################
+    ################################### Double Process ################################################
+    start_time = time.time()
     Processes = []
     for process_id in range(parallel_num):
         p1 = Process(target=single_process, args =(parallel_configs[process_id], process_id))
@@ -193,7 +194,9 @@ def parallel_process(input_path, output_path, parallel_num = 2):
         process.join()
         # process.close()
     print("All Processes End")
-    ######################################################################
+    full_time_spent = int(time.time() - start_time)
+    print("Total time spent for this video is %d min %d s" %(full_time_spent//60, full_time_spent%60))
+    ####################################################################################################
 
 
     # combine video together

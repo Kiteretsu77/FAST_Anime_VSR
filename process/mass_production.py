@@ -38,12 +38,7 @@ def mass_process(input_folder_dir, output_dir_parent):
 
         # Process the video
         # TODO: 利用log的report看看要不要减少partition的thread数量，毕竟相同视频类型都是相似的
-        start = time.time()
-
         parallel_process(input_name, output_name, parallel_num=configuration.process_num)
-
-        full_time_spent = int(time.time() - start)
-        print("Total time spent for this video is %d min %d s" %(full_time_spent//60, full_time_spent%60))
 
 
         # After Processing
