@@ -14,10 +14,10 @@ class configuration:
 
     
     ######################################################  Frequently Edited Setting  #################################################### 
-    scale = 2                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
-    model_name = "Real-ESRGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
-    inp_path = r"/home/hiakaridawn2/Desktop/videos"                 # intput path (can be a single video file or a folder directory with videos)
-    opt_path = r"/home/hiakaridawn2/Desktop/videos_processed"       # output path after processing all videos in inp_path (should only be a folder directory)
+    scale = 1                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
+    model_name = "Real-CUGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
+    inp_path = "../result.mp4"                 # intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../result_processed.mp4"       # output path after processing video/s of inp_path
     decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
 
     # Multithread and Multiprocessing setting 
@@ -34,8 +34,6 @@ class configuration:
 
 
     ###########################################  General Setting  ########################################################################
-    unet_partition_name = ""
-    unet_full_name = ""
     adjust = 6
     left_mid_right_diff = [2, -2, 2] # Generally speaking, this is not needed to modify
 
@@ -81,3 +79,6 @@ class configuration:
     full_croppped_img_dir = "tensorrt_weight_generator/full_croppped_img.png"
     partition_frame_dir = "tensorrt_weight_generator/partition_cropped_img.png"
     weights_dir = "weights/"
+
+    model_full_name = ""
+    model_partition_name = ""

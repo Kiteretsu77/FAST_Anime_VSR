@@ -14,7 +14,6 @@ s_print_lock = Lock()
 # import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
-from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
 
 
 class UpScalerMT(threading.Thread):
@@ -98,7 +97,14 @@ class UpScalerMT(threading.Thread):
 
 
 class VideoUpScaler(object):
-    def __init__(self, configuration, process_id = 0):
+    def __init__(self, configuration, model_full_name, model_partition_name, process_id = 0):
+        '''
+            Args:
+            configuration (class): all config info we need
+            model_full_name (str): the full model name
+            model_partition_name (str): the parition model name
+            process_id (int): the processid this class belongs to
+        '''
 
         ###################################### Important Params ##################################################################################
         self.writer = None    # Used in Call function
@@ -126,10 +132,12 @@ class VideoUpScaler(object):
         ################################### Load model ##################################################################################
         # TODO: we should support more than float16 cases
         # Model full and partition weight path setup
-        weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + configuration.model_partition_name + '_float16_weight.pth')
+        weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_partition_name + '_float16_weight.pth')
+        print(weight_path_partition_path)
         assert(os.path.exists(weight_path_partition_path))
         if configuration.full_model_num != 0:
-            weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + configuration.model_full_name + '_float16_weight.pth')
+            weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_full_name + '_float16_weight.pth')
+            print(weight_path_partition_path)
             assert(os.path.exists(weight_path_full_path))
 
         #################################################################################################################################
@@ -184,48 +192,28 @@ class VideoUpScaler(object):
         ############################# Model Preparation ####################################################################
         if configuration.model_name == "Real-ESRGAN":
             from Real_ESRGAN.uprrdb_main import RealESRGAN_Scalar
-            # Full Frame Model
-            print("Full Model Preparation")
-            for idx in range(self.full_model_num):
-                print(configuration.model_name + " full : " + str(idx))
-                model = RealESRGAN_Scalar(weight_path_full_path, self.adjust)
-                print("pass model init")
-                upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
-                upscaler_full.start()
-                print("pass UpScalerMT start")
-
-            # Partition Frame Model
-            print("Partition Model Preparation")
-            for id in range(self.nt):
-                print(configuration.model_name + " partition : " + str(id))
-                model = RealESRGAN_Scalar(weight_path_partition_path, self.adjust)
-                upscaler = UpScalerMT(id, self.inp_q, self.res_q, model, configuration.p_sleep, self.nt)
-                upscaler.start()
-
-
+            NN_model = RealESRGAN_Scalar
         elif configuration.model_name == "Real-CUGAN":
-            
-            for idx in range(self.full_model_num):
-                print(configuration.model_name + " full : " + str(idx))
-                model = RealCuGAN_Scalar(weight_path_full_path, self.adjust)
-                print("pass model init")
-                upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
-                upscaler_full.start()
-                print("pass UpScalerMT start")
-                
-            # Partition Frame Model
-            print("Partition Model Preparation")
-            for id in range(self.nt):
-                print(configuration.model_name + " partition : " + str(id))
-                model = RealCuGAN_Scalar(weight_path_partition_path, self.adjust)
-                upscaler = UpScalerMT(id, self.inp_q, self.res_q, model, configuration.p_sleep, self.nt)
-                upscaler.start()
+            from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
+            NN_model = RealCuGAN_Scalar
 
-        else:
-            print("This model_name is not supported ", configuration.model_name)
-            os._exit(0)
+        # Full Frame Model
+        print("Full Model Preparation")
+        for idx in range(self.full_model_num):
+            print(configuration.model_name + " full : " + str(idx))
+            model = NN_model(weight_path_full_path, self.adjust)
+            print("pass model init")
+            upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
+            upscaler_full.start()
+            print("pass UpScalerMT start")
 
-        
+        # Partition Frame Model
+        print("Partition Model Preparation")
+        for id in range(self.nt):
+            print(configuration.model_name + " partition : " + str(id))
+            model = NN_model(weight_path_partition_path, self.adjust)
+            upscaler = UpScalerMT(id, self.inp_q, self.res_q, model, configuration.p_sleep, self.nt)
+            upscaler.start()
         ######################################################################################################################
 
     def frame_write(self):

@@ -93,10 +93,12 @@ def weight_justify(config, video_input_dir):
 
     
     # Edit the model base name for existed weight (This will be used in inference by directly accessing configuration)
-    configuration.model_full_name = str(w) + "X" + str(h)
-    configuration.model_partition_name = str(w) + "X" + str(partition_height)
+    model_full_name = str(w) + "X" + str(h)
+    model_partition_name = str(w) + "X" + str(partition_height)
     # print("The full frame name is {} and partition frame name is {} ".format(configuration.model_full_name, configuration.model_partition_name))
 
+
+    return (model_full_name, model_partition_name)
 
 
 def split_video(input_file, parallel_num):
@@ -170,7 +172,7 @@ def parallel_process(input_path, output_path, parallel_num = 2):
 
 
     # Prepare TensorRT weight (Detect this every time when you are processing a different video)
-    weight_justify(configuration, input_path)
+    model_full_name, model_partition_name = weight_justify(configuration, input_path)
     print("The full frame name is {} and partition frame name is {} ".format(configuration.model_full_name, configuration.model_partition_name))
 
     # Extract subtitle automatically no matter if it has or not
@@ -185,7 +187,7 @@ def parallel_process(input_path, output_path, parallel_num = 2):
     start_time = time.time()
     Processes = []
     for process_id in range(parallel_num):
-        p1 = Process(target=single_process, args =(parallel_configs[process_id], process_id))
+        p1 = Process(target=single_process, args =(model_full_name, model_partition_name, parallel_configs[process_id], process_id))
         p1.start()
         Processes.append(p1)
     print("All Processes Start")
@@ -206,14 +208,14 @@ def parallel_process(input_path, output_path, parallel_num = 2):
 
 
 
-def single_process(params, process_id):
+def single_process(model_full_name, model_partition_name, params, process_id):
 
     # Preprocess to edit params to the newest version we need
     config_preprocess(params, configuration)
 
 
     # TODO: 我觉得这里应该直接读取video height和width然后直接选择模型，不然每次自己手动很麻烦
-    video_upscaler = VideoUpScaler(configuration, process_id)
+    video_upscaler = VideoUpScaler(configuration, model_full_name, model_partition_name, process_id)
     print("="*100)
     print("Current Processing file is ", configuration.inp_path)
     report = video_upscaler(configuration.inp_path, configuration.opt_path)
