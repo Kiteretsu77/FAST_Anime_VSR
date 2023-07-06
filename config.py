@@ -14,11 +14,12 @@ class configuration:
 
     
     ######################################################  Frequently Edited Setting  #################################################### 
-    scale = 2                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
-    model_name = "Real-ESRGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
-    inp_path = r"/home/hiakaridawn2/Desktop/videos"                 # intput path (can be a single video file or a folder directory with videos)
-    opt_path = r"/home/hiakaridawn2/Desktop/videos_processed"       # output path after processing all videos in inp_path (should only be a folder directory)
-    decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
+    scale = 2                                                               # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
+    model_name = "Real-ESRGAN"                                              # Supported: "Real-CUGAN" || "Real-ESRGAN" 
+    inp_path = r"/home/hiakaridawn2/Desktop/DateAlive_S2"                   # intput path (can be a single video file or a folder directory with videos)
+    opt_path = r"/home/hiakaridawn2/Desktop/DateAlive_S2_processed"         # output path after processing all videos in inp_path (should only be a folder directory)
+    rename = True               # When the input is a folder, rename = True will help you organize downloaded video to another name (it will save user time on renaming files)
+    decode_fps = 24             # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
 
     # Multithread and Multiprocessing setting 
     process_num = 3          # This is the fully parallel Process number
