@@ -1,6 +1,6 @@
-import tensorrt
-from torch2trt import torch2trt
-import torch 
+# import tensorrt
+# from torch2trt import torch2trt
+# import torch 
 
 import os, sys, collections, time
 import shutil, math
