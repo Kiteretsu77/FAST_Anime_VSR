@@ -132,13 +132,16 @@ class VideoUpScaler(object):
         ################################### Load model ##################################################################################
         # TODO: we should support more than float16 cases
         # Model full and partition weight path setup
-        weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_partition_name + '_float16_weight.pth')
-        print(weight_path_partition_path)
-        assert(os.path.exists(weight_path_partition_path))
-        if configuration.full_model_num != 0:
-            weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_full_name + '_float16_weight.pth')
+        weight_path_full_path, weight_path_partition_path = "", ""
+
+        if configuration.use_tensorrt:
+            weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_partition_name + '_float16_weight.pth')
             print(weight_path_partition_path)
-            assert(os.path.exists(weight_path_full_path))
+            assert(os.path.exists(weight_path_partition_path))
+            if configuration.full_model_num != 0:
+                weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_full_name + '_float16_weight.pth')
+                print(weight_path_partition_path)
+                assert(os.path.exists(weight_path_full_path))
 
         #################################################################################################################################
 
