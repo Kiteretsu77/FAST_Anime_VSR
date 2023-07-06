@@ -1,4 +1,6 @@
-import os, time, sys
+import os, time, sys, math
+
+# import videos from local folder
 from config import configuration
 
 
@@ -24,21 +26,36 @@ def mass_process(input_folder_dir, output_dir_parent):
     check_existence(output_dir_parent, create=True)
 
 
+    # if rename, we will rename the video easily
+    if configuration.rename:
+        video_lists = os.listdir(input_folder_dir)
+        video_num = len(video_lists)
+        total_idx_length = len(str(video_num))
+        for idx, filename in enumerate(sorted(video_lists)):
+            idx = idx + 1
+            format = filename.split('.')[-1]
+            new_name = "0"*(total_idx_length-len(str(idx))) + str(idx) + "." + format
+
+            input_dir = os.path.join(input_folder_dir, filename)
+            new_dir = os.path.join(input_folder_dir, new_name)
+            os.rename(input_dir, new_dir)
+
+
     print("All files begin")
-    for _, file in enumerate(sorted(os.listdir(input_folder_dir))):
-        lists = file.split('.')
+    for _, filename in enumerate(sorted(os.listdir(input_folder_dir))):
+        lists = filename.split('.')
         target_name = ''.join(lists[:-1])
 
 
         # Find the name of input and ouput
-        input_name = os.path.join(input_folder_dir, file)
+        input_dir = os.path.join(input_folder_dir, filename)
         output_name = os.path.join(output_dir_parent, target_name + "_processed.mp4")
-        print("We are super resolving {} and we will save it at {}".format(input_name, output_name))
+        print("We are super resolving {} and we will save it at {}".format(input_dir, output_name))
 
 
         # Process the video
         # TODO: 利用log的report看看要不要减少partition的thread数量，毕竟相同视频类型都是相似的
-        parallel_process(input_name, output_name, parallel_num=configuration.process_num)
+        parallel_process(input_dir, output_name, parallel_num=configuration.process_num)
 
 
         # After Processing

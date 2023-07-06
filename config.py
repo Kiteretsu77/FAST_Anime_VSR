@@ -1,8 +1,8 @@
-# The first three lib import is needed to be in the following order, else there is a bug of dependency appear
-import tensorrt
-from torch2trt import torch2trt
-import torch 
-##########################################
+# # The first three lib import is needed to be in the following order, else there is a bug of dependency appear
+# import tensorrt
+# from torch2trt import torch2trt
+# import torch 
+# ##########################################
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0"          # GPU device for inference
@@ -14,7 +14,7 @@ class configuration:
 
     
     ######################################################  Frequently Edited Setting  #################################################### 
-    scale = 1                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
+    scale = 2                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
     model_name = "Real-CUGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
     inp_path = "../result.mp4"                 # intput path (can be a single video file or a folder directory with videos)
     opt_path = "../result_processed.mp4"       # output path after processing video/s of inp_path
