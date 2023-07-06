@@ -46,6 +46,8 @@ class configuration:
     _architecture_dict = {"Real-CUGAN": "cunet", 
                          "Real-ESRGAN": "rrdb"}
     architecture_name = _architecture_dict[model_name]
+
+    RRDB_blocks_num = 7         # how many blocks RRDB you want to use; if you want to use original Real-ESRGAN weight, change this to 23; else, it it's my trained version, it's 7
     ######################################################################################################################################
     
 
