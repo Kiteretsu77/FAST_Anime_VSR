@@ -27,6 +27,7 @@ def check_existence(file_dir):
 
 
 def config_preprocess(params, config):
+    # Here, we should replace configuration.inp_path to be a specific partitioned file we need.
     if params != None:
         for param in params:
             if hasattr(config, param):
