@@ -14,16 +14,21 @@ class configuration:
 
     
     ######################################################  Frequently Edited Setting  #################################################### 
-    scale = 2                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
-    model_name = "Real-CUGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
-    inp_path = "../result.mp4"                 # intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../result_processed.mp4"       # output path after processing video/s of inp_path
-    decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
+    # Fundamental setting
+    scale = 1                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
+    model_name = "Real-ESRGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
+    inp_path = "../test.mp4"                 # intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../test_processed.mp4"       # output path after processing video/s of inp_path
+    
+    # Auxiliary setting
+    decode_fps = 24             # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
+    use_tensorrt = True        # tensorrt increase speed a lot; so, it is highly recommended to install it
+
 
     # Multithread and Multiprocessing setting 
-    process_num = 3          # This is the fully parallel Process number
-    full_model_num = 2       # Full frame thread instance number
-    nt = 2                   # Partition frame (1/3 part of a frame) instance number 
+    process_num = 1             # This is the fully parallel Process number
+    full_model_num = 2          # Full frame thread instance number
+    nt = 2                      # Partition frame (1/3 part of a frame) instance number 
 
     # Reference for my 3090Ti setting (almost full power)
     # Input Resolution: process_num x (full_model_num + nt)
@@ -33,11 +38,11 @@ class configuration:
     ######################################################################################################################################
 
 
-    ###########################################  General Setting  ########################################################################
+    ###########################################  General Details Setting  ################################################################
     adjust = 6
     left_mid_right_diff = [2, -2, 2] # Generally speaking, this is not needed to modify
 
-    # architecture name
+    # Architecture name
     _architecture_dict = {"Real-CUGAN": "cunet", 
                          "Real-ESRGAN": "rrdb"}
     architecture_name = _architecture_dict[model_name]
@@ -57,20 +62,22 @@ class configuration:
 
     ######################################################################################################################################
 
-    #############################################  Multi-threading and Encoding ##########################################################
+
+    #########################################  Multi-threading and Encoding Setting ######################################################
     # Original Setting: p_sleep = (0.005, 0.012) decode_sleep = 0.001
     p_sleep = (0.005, 0.015)    # Used in Multi-Threading sleep time (empirical value)
     decode_sleep = 0.001        # Used in Video decode
 
 
     # Several recommended options for crf and preset:
-    #   High Qulity:                ['-crf', '19', '-preset', 'slow']
-    #   Balanced:                   ['-crf', '23', '-preset', 'medium']
-    #   Lower Quality and False:    ['-crf', '28', '-preset', 'fast'] 
-    # If you want to save more bits (lower bitrate and lower bit/pixel):
-    #   You can use HEVC(H.265) as the encoder by appending ["-c:v", "libx265"], but the whole processing speed will be lower due to increased complexity
+    #   High Qulity:                                    ['-crf', '19', '-preset', 'slow']
+    #   Balanced:                                       ['-crf', '23', '-preset', 'medium']
+    #   Lower Quality but Smaller size and Faster:      ['-crf', '28', '-preset', 'fast'] 
 
-    encode_params = ['-crf', '23', '-preset', 'medium', "-tune", "animation", "-c:v", "libx264"]
+    # If you want to save more bits (lower bitrate and lower bit/pixel):
+    #   You can use HEVC(H.265) as the encoder by appending ["-c:v", "libx265"], but the whole processing speed will be lower due to the increased complexity
+
+    encode_params = ['-crf', '23', '-preset', 'medium', "-tune", "animation", "-c:v", "libx264"]        
     ######################################################################################################################################
 
 

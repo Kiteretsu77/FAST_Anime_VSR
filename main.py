@@ -68,7 +68,7 @@ def main():
         parallel_process(input_path, output_path, parallel_num=configuration.process_num)
 
     else:
-        print("We didn't find such location exists!")
+        print("We didn't find the input source {} exists!".format(input_path))
 
 
     

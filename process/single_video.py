@@ -53,7 +53,9 @@ def check_repeat_file(output_dir):
 
 
 def weight_justify(config, video_input_dir):
-    # Check if our needed weight is inside this folder. If it is, just edit the config
+    ''' Check if our needed weight is inside this folder. If it is, edit config; else, download and generate one
+    '''
+    
 
     # Find all supported resolution weight
     supported_res = collections.defaultdict(list)

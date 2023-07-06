@@ -10,6 +10,8 @@ import os, sys
 root_path = os.path.abspath('.')
 sys.path.append(root_path)
 from process.utils import np2tensor, tensor2np
+from config import configuration
+from Real_CuGAN.cunet import UNet_Full
 
 
 class UpCunet2x(nn.Module):
@@ -19,14 +21,20 @@ class UpCunet2x(nn.Module):
 
 
         torch.cuda.empty_cache()
-        self.unet_model_full = TRTModule()
-
-        print("unet_full_weight_path is ", unet_full_weight_path)
-        self.unet_model_full.load_state_dict(torch.load(unet_full_weight_path))
-        # don't use .eval().cuda() because it will raise a bug
-        print("step finish!")
-        for param in self.unet_model_full.parameters():
-            param.grad = None
+        if configuration.use_tensorrt:
+            self.unet_model_full = TRTModule()
+            self.unet_model_full.load_state_dict(torch.load(unet_full_weight_path))
+            # don't use .eval().cuda() because it will raise a bug
+            for param in self.unet_model_full.parameters():
+                param.grad = None
+        else:
+            # Use original pretrained model
+            self.unet_model_full = UNet_Full()
+            model_weight = torch.load(os.path.join(configuration.weights_dir, configuration.model_name, configuration.architecture_name+'_weight.pth'))
+            if "pro" in model_weight:
+                del model_weight["pro"]
+            self.unet_model_full.load_state_dict(model_weight, strict=True)
+            self.unet_model_full.eval().cuda()
 
 
         self.adjust_double = 2*adjust
@@ -65,9 +73,9 @@ class UpCunet2x(nn.Module):
     
 class RealCuGAN_Scalar(object):
     def __init__(self, unet_full_weight_path, adjust):
-        self.model = UpCunet2x(unet_full_weight_path, adjust).half()
-        self.inner_times = 0
-        self.counter = 0
+        self.model = UpCunet2x(unet_full_weight_path, adjust)
+        if configuration.use_tensorrt:
+            self.model = self.model.half()          # Must use half in tensorrt for float16, else the output is a black screen
 
     def __del__(self):
         # if self.counter:
@@ -76,17 +84,13 @@ class RealCuGAN_Scalar(object):
 
 
     def __call__(self, frame, position):
-        #Q： 试一下这个torch.no_grad是不是有点多余
-        # with torch.no_grad():
-        tensor = np2tensor(frame, pro=True).half()
-        s = ttime()
+        
+        tensor = np2tensor(frame, pro=True)
+        if configuration.use_tensorrt:
+            tensor = tensor.half()          # Must use half in tensorrt for float16, else the output is a black screen
+
 
         res = self.model(tensor, position)
-
-        spent = ttime() - s
-        self.counter += 1
-        # print(spent)
-        self.inner_times += spent
 
 
         result = tensor2np(res)

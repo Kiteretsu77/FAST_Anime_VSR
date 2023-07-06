@@ -227,29 +227,13 @@ def tensorrt_transform_execute(target_h, target_w, sample_img_dir=configuration.
         print("Partition Frame generation Done!")
 
 
-    print("Total time spent is %d s" %(int(time.time() - start)))
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument("--only_full_frame", action='store_true', help="")
-    parser.add_argument("--only_partition_frame", action='store_true', help="")
-    parser.add_argument('--test_dir', type=str, default="", help=" If you want to have personal test input to calibrate, you can use this one.")
-
-
-    parser.add_argument("--my_model", action='store_true', help="to load personal trainned model")
-    
-    # parser.add_argument("--int8_mode", action='store_true')   // Very unstable, so we don't recommend using it.
-    
-
-    global args
-    args = parser.parse_args()
-
-    args.int8_mode = False
+    print("Total time spent on tensorrt weight generation is %d s" %(int(time.time() - start)))
 
 
 def check_file():
+    '''
+        Check if the fundamental model weight exists; if not, download them
+    '''
     weight_store_path = os.path.join(configuration.weights_dir, configuration.model_name, configuration.architecture_name + "_weight.pth")
 
     if not os.path.exists(weight_store_path):
@@ -277,10 +261,27 @@ def generate_weight(lr_h = 540, lr_width = 960):
     parse_args()
     check_file()
 
-    tensorrt_transform_execute(lr_h, lr_width)
 
-    print(configuration.model_name + " tensorrt weight transforms has finished!")
+    if configuration.use_tensorrt:
+        tensorrt_transform_execute(lr_h, lr_width)
+        print(configuration.model_name + " tensorrt weight transforms has finished!")
     
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument("--only_full_frame", action='store_true', help="")
+    parser.add_argument("--only_partition_frame", action='store_true', help="")
+    parser.add_argument('--test_dir', type=str, default="", help=" If you want to have personal test input to calibrate, you can use this one.")
+    parser.add_argument("--my_model", action='store_true', help="to load personal trainned model")
+    # parser.add_argument("--int8_mode", action='store_true')   // Very unstable, so we don't recommend using it.
+    
+
+    global args
+    args = parser.parse_args()
+
+    args.int8_mode = False
 
 if __name__ == "__main__":
     generate_weight()

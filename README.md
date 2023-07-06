@@ -5,7 +5,10 @@ I implement it in **TensorRT** version and utilized a frame division algorithm (
 
 In my **3060Ti** Desktop version, it can process <span style="color:red">**faster than the Real-Time Anime videos**</span>, which means that **when you finish watching the first Anime video, your second Anime SR video is already processed, and you just need to click it to continue watching the next one**.
 
+Currently, this repository supports **Real-CUGAN** (official) and a **shallow Real-ESRGAN** (7 blocks RRDB Net, which is trained by myself in a private anime dataset). The reason why I trained a model myself is because the original 23 blocks Real-ESRGAN is too big for Anime video and thus their inference speed is extremely slow. Based on my experiment, a 7 blocks RRDB can restore and super-resolve well on Anime videos, which only increase ~25% time than Real-CUGAN model.
 
+
+&emsp;&emsp;\
 My ultimate goal is to directly utilize decode information in Video Codec as in this paper (https://arxiv.org/abs/1603.08968), so I use the word "**FAST**" at the beginning. **Though this repository can already process in real-time, this repository will be continuously maintained and developed.**
 
 
@@ -34,6 +37,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 
 
 # Installation (**Linux - Ubuntu**)：
+Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a lot & save a lot of GPU memory.
 1. Install CUDA. The following is how I install:
     * My Nvidia Driver in Ubuntu is installed by **Software & Updates** of Ubuntu (Nvidia server driver 525), and the cuda version in nvidia-smi is 12.0 in default, which is the driver API.
     * Next, I install cuda from the official website (https://developer.nvidia.com/cuda-12-0-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=runfile_local). I install 12.0 version because it's said that the runtime API should be older than driver API cuda (12.0 in nvidia-smi). I use **runfile(local)** to install because that is the easiest option.\
@@ -85,6 +89,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 
 
 # Installation (**Windows**)：
+Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a lot & save a lot of GPU memory.
 1. Install CUDA
 2. Install Cudnn
 3. Install tensorrt (<span style="color:red">**Don't directly use python install**</span>) 
@@ -111,6 +116,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Please follow the instructions there.\
     * Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.\
     * The input (inp_path) can be **a single video input** or **a folder with a bunch of videos** (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
+    * 
 2. Run 
    ```bash
         python main.py

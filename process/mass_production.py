@@ -61,6 +61,6 @@ def mass_process(input_folder_dir, output_dir_parent):
         # After Processing
         print("After finish one thing, sleep for a moment!")
         time.sleep(5)
-    os._exit(0)
+    
         
 
