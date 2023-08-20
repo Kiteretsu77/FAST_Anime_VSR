@@ -108,12 +108,14 @@ class VideoUpScaler(object):
 
         ###################################### Important Params ##################################################################################
         self.writer = None    # Used in Call function
-        self.nt = configuration.nt
         self.use_rescale = configuration.use_rescale
         self.scale = configuration.scale
+        self.scale_base = configuration.scale_base
         self.model_name = configuration.model_name
         self.encode_params = configuration.encode_params
         self.decode_sleep = configuration.decode_sleep
+        self.full_model_num = configuration.full_model_num
+        self.nt = configuration.nt
         self.now_idx = 0
         self.loop_counter = 0
         self.total_frame_number = 0
@@ -122,20 +124,12 @@ class VideoUpScaler(object):
         self.process_id = process_id
         print("This process id is ", self.process_id)
 
-        # Set the scale base (the supported scale of their original model)
-        if configuration.model_name == "Real-CUGAN":
-            self.scale_base = 2
-        elif configuration.model_name == "Real-ESRGAN":
-            self.scale_base = 4
-        else:
-            raise NotImplementedError()
 
-
-        if configuration.full_model_num == 0:
-            self.max_cache_loop = max(int((configuration.nt + configuration.full_model_num) * configuration.Queue_hyper_param),
+        if self.full_model_num == 0:
+            self.max_cache_loop = max(int((self.nt + self.full_model_num) * configuration.Queue_hyper_param),
                                       int(2 * configuration.Queue_hyper_param))
         else:
-            self.max_cache_loop = max(int((configuration.nt//3 + configuration.full_model_num) * configuration.Queue_hyper_param),
+            self.max_cache_loop = max(int((self.nt//3 + self.full_model_num) * configuration.Queue_hyper_param),
                                             int(2 * configuration.Queue_hyper_param))
         print("max_cache_loop size is ", self.max_cache_loop)
         #################################################################################################################################
@@ -149,7 +143,7 @@ class VideoUpScaler(object):
             weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_partition_name + '_float16_weight.pth')
             print(weight_path_partition_path)
             assert(os.path.exists(weight_path_partition_path))
-            if configuration.full_model_num != 0:
+            if self.full_model_num != 0:
                 weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_full_name + '_float16_weight.pth')
                 print(weight_path_partition_path)
                 assert(os.path.exists(weight_path_full_path))
@@ -169,10 +163,7 @@ class VideoUpScaler(object):
         ########################## Image Crop & Momentum ##################################################################################
         self.adjust = configuration.adjust
         self.left_mid_right_diff = configuration.left_mid_right_diff # 这个理解起来就是第一个最右/下侧多2， 中间两边都少2（同少4），最后一个左/上边多2
-
         self.full_frame_cal_num = 0
-        self.full_model_num = configuration.full_model_num  # number of full model available
-
         self.momentum = configuration.momentum
         self.momentum_reference_size = 3 # queue size
         self.times2switchFULL = 0
@@ -183,7 +174,7 @@ class VideoUpScaler(object):
         ############################### MultiThread And MultiProcess #####################################################
         # Full Frame
         self.inp_q_full = None
-        if configuration.full_model_num != 0:
+        if self.full_model_num != 0:
             Full_Frame_Queue_size = int( (self.full_model_num + 1) * configuration.Queue_hyper_param)
             self.inp_q_full = Queue(Full_Frame_Queue_size) # queue of full frame
             print("Total FUll Queue size is ", Full_Frame_Queue_size)

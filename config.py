@@ -16,10 +16,10 @@ class configuration:
     ######################################################  Frequently Edited Setting  #################################################### 
     # Fundamental setting
     # TODO: the rescale mechanism for Real-CUGAN and Real-ESRGAN need more consideration. Currently, what I preset is a rough format.
-    use_rescale = False                    # For Real-CUGAN, If its scale != 2, we shrink to (scale/2) * Width/Height and then do SR upscale 2
-                                           # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
-    scale = 4                              # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
-    model_name = "Real-ESRGAN"              # Supported: "Real-CUGAN" || "Real-ESRGAN" (which only support 4x now)
+    use_rescale = False                     # For Real-CUGAN, If its scale != 2, we shrink to (scale/2) * Width/Height and then do SR upscale 2
+                                            # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
+    scale = 4                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
+    model_name = "Real-ESRGAN"              # Supported: "Real-CUGAN" || "Real-ESRGAN"
     inp_path = "../videos/crop.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
     opt_path = "../videos/crop_processed.mp4"       # Output path after processing video/s of inp_path
     
@@ -30,12 +30,14 @@ class configuration:
 
 
     # Multithread and Multiprocessing setting 
-    process_num = 3             # This is the fully parallel Process number
+    process_num = 2             # This is the fully parallel Process number
     full_model_num = 2          # Full frame thread instance number
-    nt = 2                      # Partition frame (1/3 part of a frame) instance number 
+    nt = 0                      # Partition frame (1/3 part of a frame) instance number 
 
-    # Reference for my 3090Ti setting (almost full power)
-    # Input Resolution: process_num x (full_model_num + nt)
+    # PS:
+    #   Reference for my 5600x + 3090Ti setting for Real-CUGAN (almost full power)
+    #   **For Real-ESRGAN there is some bugs when nt != 0, I am still analyzing it. To use Real-ESRGAN, we recommend to set nt = 0**
+    #   Input Resolution: process_num x (full_model_num + nt)
     # 720P: 3 x (2 + 2)
     # 540P: 3 x (3 + 2)
     # 480P: 3 x (3 + 3)
@@ -46,10 +48,14 @@ class configuration:
     adjust = 6
     left_mid_right_diff = [2, -2, 2] # Generally speaking, this is not needed to modify
 
-    # Architecture name
+    # Architecture name or private info
     _architecture_dict = {"Real-CUGAN": "cunet", 
                          "Real-ESRGAN": "rrdb"}
     architecture_name = _architecture_dict[model_name]
+    
+    _scale_base_dict = {"Real-CUGAN": 2, 
+                         "Real-ESRGAN": 4}
+    scale_base = _scale_base_dict[model_name]
 
     ######################################################################################################################################
     

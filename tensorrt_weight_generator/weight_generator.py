@@ -115,7 +115,7 @@ class Generator:
 
         else:
             print("We don't support this architecture ", configuration.architecture_name)
-            os._exit(0)        
+            raise NotImplementedError()     
 
         generator.load_state_dict(model_weight, strict=True)
         generator.eval().cuda()
@@ -146,7 +146,8 @@ class Generator:
 
         # 测试一下output
         output = model_trt_model(input)
-        print("sample output shape is ", output.shape)
+        print("Sample input shape is ", input.shape)
+        print("Sample output shape is ", output.shape)
 
         return output
         

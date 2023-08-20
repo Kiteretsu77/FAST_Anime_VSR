@@ -74,10 +74,10 @@ def weight_justify(config, video_input_dir):
     # Check if it is existed in supported_res
     video = VideoFileClip(video_input_dir)
     w, h = video.w, video.h
-    if config.scale != 2:
+    if config.use_rescale:
         print("Shrink target video size by half and then upscale 2")
-        w = int(w * (config.scale/2))
-        h = int(h * (config.scale/2))
+        w = int(w * (config.scale / config.scale_base))
+        h = int(h * (config.scale / config.scale_base))
 
 
     # Generate the TensorRT weight if needed
