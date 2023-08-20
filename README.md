@@ -5,7 +5,8 @@ I implement it in **TensorRT** version and utilized a frame division algorithm (
 
 In my **3060Ti** Desktop version, it can process <span style="color:red">**faster than the Real-Time Anime videos**</span>, which means that **when you finish watching the first Anime video, your second Anime SR video is already processed, and you just need to click it to continue watching the next one**.
 
-Currently, this repository supports **Real-CUGAN** (official) and a **shallow Real-ESRGAN** (7 blocks RRDB Net, which is trained by myself in a private anime dataset). The reason why I trained a model myself is because the original 23 blocks Real-ESRGAN is too big for Anime video and thus their inference speed is extremely slow. Based on my experiment, a 7 blocks RRDB can restore and super-resolve well on Anime videos, which only increase ~25% time than Real-CUGAN model.
+Currently, this repository supports **Real-CUGAN** (official) and a **shallow Real-ESRGAN** (6 blocks Anime Image version RRDB-Net provided by Real-ESRGAN). 
+<!-- The reason why I trained a model myself is because the original 23 blocks Real-ESRGAN is too big for Anime video and thus their inference speed is extremely slow. Based on my experiment, a 7 blocks RRDB can restore and super-resolve well on Anime videos, which only increase ~25% time than Real-CUGAN model. -->
 
 
 &emsp;&emsp;\
@@ -28,7 +29,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 &emsp;&emsp; 
 
 
-# Supported Devices and Language:
+# Supported Devices and Python Version:
 1. Nvidia GPU with Cuda (Tested: 3060Ti, 3090Ti, 4090)
 2. Tested on Python 3.10
 &emsp;&emsp; \
@@ -113,10 +114,10 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
 
 
 # Run (Inference):
-1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Please follow the instructions there.\
-    * Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.\
+1. Adjust **config.py** to setup your setting. Usually, just editing **Frequently Edited Setting** part is enough. Please follow the instructions there.
+    * Edit **process_num**, **full_model_num**, **nt** to match your GPU's computation power.
     * The input (inp_path) can be **a single video input** or **a folder with a bunch of videos** (video format can be various as long as they are supported by ffmpeg); The output is **mp4** format in default. 
-    * 
+
 2. Run 
    ```bash
         python main.py
@@ -131,7 +132,7 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
 
 
 # Future Works:
-1. Support Real-ESRGAN (Will refactor a lot of codes) && I also want to publish a smaller RRDB Network (with 7 blocks instead of 23 blocks) I trained.
+1. Accelerate Real-ESRGAN (There is still some unkown bugs of video writing when I set nt != 0). It requires more development.
 1. MultiGPU support
 2. Provide PSNR && Visual Quality report in README.
 3. Provide all repositories in English.
