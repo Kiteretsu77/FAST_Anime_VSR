@@ -5,7 +5,7 @@ from multiprocessing import Queue
 from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
 from moviepy.editor import VideoFileClip
 from time import time as ttime, sleep
-import os
+import os, time
 import numpy as np
 from threading import Lock
 s_print_lock = Lock()
@@ -14,6 +14,7 @@ s_print_lock = Lock()
 # import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
+from process.crop_utils import crop4partition
 
 
 class UpScalerMT(threading.Thread):
@@ -157,21 +158,20 @@ class VideoUpScaler(object):
         self.parition_processed_num = 0
         self.MSE_range = configuration.MSE_range
         self.Max_Same_Frame = configuration.Max_Same_Frame
-        self.mse_learning_rate = configuration.mse_learning_rate
         ############################################################################
 
         ########################## Image Crop & Momentum ##################################################################################
-        self.adjust = configuration.adjust
-        self.left_mid_right_diff = configuration.left_mid_right_diff # 这个理解起来就是第一个最右/下侧多2， 中间两边都少2（同少4），最后一个左/上边多2
+        self.pixel_padding = configuration.pixel_padding
         self.full_frame_cal_num = 0
-        self.momentum = configuration.momentum
+        self.momentum_skip_crop_frame_num = configuration.momentum_skip_crop_frame_num
         self.momentum_reference_size = 3 # queue size
-        self.times2switchFULL = 0
+        self.time2switchFULL = 0
         self.momentum_used_num = 0
         self.momentum_reference = collections.deque([False]*self.momentum_reference_size, maxlen=self.momentum_reference_size)
+        # PS: momentum_reference is a fixed length queue that records if 
         ###################################################################################################################################
 
-        ############################### MultiThread And MultiProcess #####################################################
+        ############################### MultiThread And MultiProcess ######################################################
         # Full Frame
         self.inp_q_full = None
         if self.full_model_num != 0:
@@ -206,7 +206,7 @@ class VideoUpScaler(object):
         print("Full Model Preparation")
         for idx in range(self.full_model_num):
             print(configuration.model_name + " full : " + str(idx))
-            model = NN_model(weight_path_full_path, self.adjust)
+            model = NN_model(weight_path_full_path, self.pixel_padding)
             print("pass model init")
             upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
             upscaler_full.start()
@@ -216,128 +216,10 @@ class VideoUpScaler(object):
         print("Partition Model Preparation")
         for id in range(self.nt):
             print(configuration.model_name + " partition : " + str(id))
-            model = NN_model(weight_path_partition_path, self.adjust)
+            model = NN_model(weight_path_partition_path, self.pixel_padding)
             upscaler = UpScalerMT(id, self.inp_q, self.res_q, model, configuration.p_sleep, self.nt)
             upscaler.start()
         ######################################################################################################################
-
-    def frame_write(self):
-        # 从res_q中提取内容， 并整合成一张大图内容
-
-        #Step1： 写入暂存器，因为多进程多线程的结果是不均匀出来的
-        while True:  # 取出处理好的所有结果
-            if self.res_q.empty():
-                break
-            iidx, position, res = self.res_q.get()
-            self.idx2res[iidx][position] = res
-
-
-        #Step2: 把暂存器的内容写到writer中
-        while True:  # 按照idx排序写帧
-            if not self.res_q.empty():
-                iidx, position, res = self.res_q.get()
-                self.idx2res[iidx][position] = res
-
-            #这里一定保证是sequential的，所以repeat frame前面的reference完全有加载
-            if self.loop_counter == self.max_cache_loop:  #####这个系数也要config管理！#####
-                self.writer.close()
-                print("Ends at frame ", self.now_idx)
-                print("P: Continuously not found, end the program and store what's stored")
-                os._exit(0)
-
-            # if self.now_idx >= 2063:
-            #     print(self.now_idx, self.idx2res[self.now_idx])
-
-            if not all(i in self.idx2res[self.now_idx] for i in [0,1,2]) and not 3 in self.idx2res[self.now_idx]:
-                self.loop_counter += 1
-                break
-            self.loop_counter = 0
-
-
-            #############################################下面确保了frame的所有部分都是在的################################################
-            if self.now_idx % 50 == 0:
-                print("Process {} had written frames: {}".format(self.process_id, self.now_idx))
-
-            # 3种类型的crop处理
-            if 3 not in self.idx2res[self.now_idx]:
-                crops = []
-                for i in [0, 1, 2]:
-                    if isinstance(self.idx2res[self.now_idx][i], int):
-                        target_idx = self.idx2res[self.now_idx][i]
-                        if 3 in self.idx2res[target_idx]:
-                            #这里就说明目标是一整块没有被切分成block，需要提取一下
-                            crops.append(self.full_crop(self.idx2res[target_idx][3], i))
-                        else:
-                            crops.append(self.idx2res[target_idx][i])
-                    else:
-                        crops.append(self.idx2res[self.now_idx][i])
-                combined_frame = self.combine(*crops)  # adjust是完全固定的值
-            else:
-                #TODO: 如果后面FULL也要算MSE的话，这里就要写的更加复杂了
-                combined_frame = self.idx2res[self.now_idx][3]
-
-
-            # TODO: 如果是用之前的ref的时候，直接提取之前的计算结果
-            self.writer.write_frame(combined_frame)
-
-
-            ###为了程序简单，多了Max_Same_Frame帧的cache
-            if self.now_idx > self.Max_Same_Frame:
-                del self.idx2res[self.now_idx - self.Max_Same_Frame]
-
-            self.now_idx += 1
-
-
-    def combine(self, crop1, crop2, crop3):
-        #这里combine images together！！！！
-        # cv2.imwrite("res/crop" + str(self.now_idx) +"_1.png", crop1[:-6, :, :])
-        # cv2.imwrite("res/crop" + str(self.now_idx) +"_2.png", crop2[6:-6, :, :])
-        # cv2.imwrite("res/crop" + str(self.now_idx) +"_3.png", crop3[6:, :, :])
-        # print(crop1.shape, crop2.shape, crop3.shape)
-        # temp = np.concatenate((crop1[:-12, :, :], crop2[12:-12, :, :], crop3[12:, :, :]))
-        # cv2.imwrite("res/img" + str(self.now_idx) + ".png", temp)
-        # return np.concatenate((crop1[:-12, :, :], crop2[12:-12, :, :], crop3[12:, :, :]))
-        return np.concatenate((crop1, crop2, crop3))
-
-
-    def full_crop(self, frame, position):
-        # 主要应用在mse history搜寻的时候，如果是一整块，就只能分割一下
-        crop_base = self.height // 3
-        # TODO: 这里要optimize一下，找个地方存一下计算结果
-        if position == 0:
-            return frame[:2*(crop_base+self.left_mid_right_diff[0]), :, :] # :324
-        elif position == 1:
-            return frame[2*(crop_base-self.left_mid_right_diff[1]) : 4*crop_base+2*self.left_mid_right_diff[1], :, :] # 324:636
-        elif position == 2:
-            return frame[4*crop_base+2*self.left_mid_right_diff[1]:, :, :] #636:
-
-
-    def crop(self, img):
-        # TODO: 这里要optimize一下，找个地方存一下计算结果
-        crop_base = self.height // 3  # 160 for 480p
-        crop1 = img[:crop_base + 2*self.adjust + self.left_mid_right_diff[0], :, :] # :168
-        crop2 = img[crop_base-self.left_mid_right_diff[1]-2*self.adjust : 2*crop_base+self.left_mid_right_diff[1]+2*self.adjust, :, :] # 156:324
-        crop3 = img[-(crop_base + 2*self.adjust + self.left_mid_right_diff[2]):, :, :] # -168:
-        # print(crop1.shape, crop2.shape, crop3.shape)
-        # cv2.imwrite('split/' + str(time.time()) + '_1.png', cv2.cvtColor(crop1, cv2.COLOR_BGR2RGB))
-        # cv2.imwrite('split/' + str(time.time()) + '_2.png', cv2.cvtColor(crop2, cv2.COLOR_BGR2RGB))
-        # cv2.imwrite('split/' + str(time.time()) + '_3.png', cv2.cvtColor(crop3, cv2.COLOR_BGR2RGB))
-        return (crop1, crop2, crop3)
-
-
-    def queue_put(self, idx, i, crop ):
-        if i == 0:
-            crop = crop[:-self.adjust, :, :]
-        elif i == 1:
-            crop = crop[self.adjust:-self.adjust, :, :]
-        elif i == 2:
-            crop = crop[self.adjust:, :, :]
-
-        # print(crop.shape)
-        self.parition_processed_num += 1
-        self.inp_q.put((idx, i, crop))
-
-
 
     def __call__(self, input_path, output_path):
         ''' Main Calling function
@@ -388,20 +270,22 @@ class VideoUpScaler(object):
 
         video_decode_loop_start = ttime()
         ######################################### video decode loop #######################################################
-        for idx, frame in enumerate(objVideoreader.iter_frames(fps=self.decode_fps)): # 删掉了target fps
+        for frame_idx, frame in enumerate(objVideoreader.iter_frames(fps=self.decode_fps)): # 删掉了target fps
             
+            # Rescale the image for different setting
             if self.use_rescale:
-                # If scale != self.scale_base, adjust the image size at the beginning
                 frame = cv2.resize(frame, (self.width, self.height)) # interpolation=cv2.INTER_LANCZOS4
 
-            if idx % 50 == 0 or int(self.total_frame_number) == idx:
+
+            if frame_idx % 50 == 0 or int(self.total_frame_number) == frame_idx:
                 # 以后print这边用config统一管理
-                print("total frame:%s\t video decoded frames:%s"%(int(self.total_frame_number), idx))
+                print("Total frame:%s\t video decoded frames:%s"%(int(self.total_frame_number), frame_idx))
                 sleep(self.decode_sleep)  # 否则解帧会一直抢主进程的CPU到100%，不给其他线程CPU空间进行图像预处理和后处理
                     # 目前nt=1的情况来说，不写也无所谓
 
-            # check if NN process too slow to catch up the frames decoded
-            decode_processed_diff = idx - self.now_idx
+
+            # Check if NN process too slow to catch up the frames decoded
+            decode_processed_diff = frame_idx - self.now_idx
             if decode_processed_diff >= 650:
                 #TODO: 这个插值也要假如config中
                 self.frame_write()
@@ -411,105 +295,124 @@ class VideoUpScaler(object):
                     sleep(0.4)
 
 
-            ######################### use MSE to judge whether it's highly overlapped #########################
+            ######################### Use MSE to judge whether it's highly overlapped #########################
 
-            if self.MSE_range != -1:
-                if self.nt > 0 and self.times2switchFULL <= 0:
-                    ############################################## Split Frame  ########################################
-                    (crop0, crop1, crop2) = self.crop(frame)  # We use "cropX" to access these (They are not never used)
-                    ####################################################################################################
+            queue_put_idx = []      # 0, 1, 2 are the partition frame, 3 is the full frame 
+            (crop0, crop1, crop2) = crop4partition(frame)  # We use "cropX" to access these variables
+            
 
-                    changed_status = [0, 0, 0]
-                    for i in range(3):
-                        crop = eval("crop%s"%i)
-                        if self.reference_frame[i] is None:
-                            self.reference_frame[i] = crop[:, :, 0]
-                            self.reference_idx[i] = idx
-                            self.queue_put(idx, i, eval("crop%s" % i)) # 这里put了以后，最下面就没必要再put了
+            if frame_idx == 0: 
+                # For the first frame, we just put into a whole frame into the sequence
+                self.full_frame_cal_num += 1
+                queue_put_idx = [3]
 
-                        else:
-                            # 这边我测过，用absolute error速度也不会快
-                            frame_err = np.square(self.reference_frame[i] - crop[:, :, 0])
-                            frame_err = np.mean(frame_err, dtype=np.float32)  # 这里不能用float16，会更加慢（可能是有一个cast的过程）
-
-                            if not (idx - self.reference_idx[i] < self.Max_Same_Frame):
-                                # overflow, should decrease
-                                self.reference_frame[i] = eval("crop%s" % i)[:, :, 0]
-                                self.reference_idx[i] = idx
-                                changed_status[i] = 1000 # 设置成1000，类似于调整成无限大，然后为了momentum
-
-                            else:
-                                if frame_err <= self.MSE_range:
-                                    # 发现具有高相似度，所以直接put到idx2res中的暂存器就好
-                                    self.idx2res[idx][i] = self.reference_idx[i]
-                                    self.skip_counter_ += 1
-
-                                else:
-                                    # 因为现在两帧之间的差距大于设定mse值了，所以还是走到下一帧好
-                                    self.reference_frame[i] = eval("crop%s" % i)[:, :, 0]
-                                    self.reference_idx[i] = idx
-
-                                    # 目前来说还是都变化比较大才有加载的意义
-                                    changed_status[i] = frame_err
-
-                    if self.full_model_num != 0 and all(status > self.MSE_range for status in changed_status):
-                        # 如果现在有full mode，然后每个error都大于MSE，这个地方，丢一整个frame进去
-                        # TODO: 这里还是可以加进去动态MSE的算式&&full比例控制算法，portion就这个单独算就行
-                        self.full_frame_cal_num += 1
-
-                        # if self.inp_q_full.full():
-                        #     print("Exception!!! inp_q_full is full")
-                        self.inp_q_full.put((idx, 3, frame))
-
-                        # 这样子后面回来相当于又重新开始计算，momentum会比写的数字效果+1
-                        # TODO: 测试一下momentum_reference_size和self.momentum用什么值好
-                        if all(status > 5 for status in changed_status):
-                            self.momentum_reference.append(True)
-                            if sum(self.momentum_reference) == self.momentum_reference_size: # All True
-                                self.times2switchFULL = self.momentum
-                                self.reference_frame = [None, None, None]
-                                self.reference_idx = [-1, -1, -1]
-                                self.momentum_reference.extend([False] * self.momentum_reference_size)
-                        else:
-                            self.momentum_reference.append(False)
-
-                        continue
-
-                    # 如果不走full情况，根据frame_err来塞
-                    self.momentum_reference.append(False)
-                    # if self.inp_q.full(): # 这个full的参考价值不大，但是未来也是可以继续注意的
-                    #     print("Exception!!! inp_q is full")
-                    for i in range(3):
-                        # 所有error都放进去
-                        if changed_status[i] > self.MSE_range:
-                            self.queue_put(idx, i, eval("crop%s"%i))
+                # Init the reference_frame and reference_idx
+                for i in range(3):
+                    cropX = eval("crop%s"%i)
+                    self.reference_frame[i] = cropX[:, :, 0]            # We only store Single Red Channel to compare to accelerate
+                    self.reference_idx[i] = frame_idx
+            
+            elif self.time2switchFULL > 0:  # Use Momentum 
+                self.time2switchFULL -= 1   # Update the counter
+                # 根据full_model_num和nt 进行调整
+                if self.full_model_num > 0:
+                    queue_put_idx = [3]
                 else:
-                    # TODO： momentum也还是可以加上去，不过这样子mse动态调整的数字就要变小
-                    # print("need to use momentum")
+                    assert(self.nt != 0)
+                    queue_put_idx = [0,1,2]
+            
+            else:  # No momentum considered
+                # Calculate MSE
+                mse_differences = [float("inf"), float("inf"), float("inf")]
+                for i in range(3):
+                    # Calculate MSE for each crop partition
+                    cropX = eval("crop%s"%i)
 
+                    if self.reference_frame[i] is None:     # ?????????????????
+                        # Add Reference if it is none
+                        self.reference_frame[i] = cropX[:, :, 0]            # We only store Single Red Channel to compare to accelerate
+                        self.reference_idx[i] = frame_idx
+
+                    elif (frame_idx - self.reference_idx[i]) >= self.Max_Same_Frame:
+                        # We exceed the maximum reference images we set, Reset the reference again
+                        self.reference_frame[i] = cropX[:, :, 0]
+                        self.reference_idx[i] = frame_idx
+
+                    else:   # Calculate MSE error
+
+                        # Record the frame error
+                        frame_err = np.square(self.reference_frame[i] - cropX[:, :, 0]).mean()      # 以前测试过，MAE速度也不会快
+                        mse_differences[i] = frame_err
+
+                        if frame_err <= self.MSE_range:
+                            # Two frames has very high similarity, Put reference to idx2res from reference_idx
+                            self.idx2res[frame_idx][i] = self.reference_idx[i]
+                            self.skip_counter_ += 1
+
+                        else:
+                            # Two frames have limited similarity, Reset reference_frame and reference_idx
+                            self.reference_frame[i] = cropX[:, :, 0]
+                            self.reference_idx[i] = frame_idx
+
+
+                # Decide if we use PARTITION / FULL frame mode (for full frame, decide if we need to use MOMENTUM)
+                if self.full_model_num != 0 and all(mse > self.MSE_range for mse in mse_differences):
+                    # Use FULL frame mode When we use the full_model mode, and When ALL the MSE difference is larger than the threshold
                     self.full_frame_cal_num += 1
-                    self.momentum_used_num += 1
-                    #TODO: 我这里是加上inference还是就直接momentum懒得计算，直接丢算了 ！！！TODO x2
-                    # 方案1: 暂时就这样子过了就好，顺便把全部之前的reference_frame设置为None
-                    # 方案2： 写的麻烦一点，再搞个reference 和 idx
-                    if self.nt > 0:
-                        self.times2switchFULL -= 1
-                    self.inp_q_full.put((idx, 3, frame))
+                    queue_put_idx = [3]
+
+
+                    # Check if we need to activate the MOMENTUM mechanism when the change of motion is too much
+                    if all(status > 5 for status in mse_differences):  # 5 is an empirical value
+                        self.momentum_reference.append(True)
+                        if sum(self.momentum_reference) == self.momentum_reference_size:
+                            # If we have momentum_reference_size amount of frames that have big MSE difference between consequent frames, we activate MOMENTUM mechanism
+                            self.time2switchFULL = self.momentum_skip_crop_frame_num                    # Set how many frames we will skip
+                            self.reference_frame = [None, None, None]                                   # Reset reference
+                            self.reference_idx = [-1, -1, -1]                                           # Reset reference
+                            self.momentum_reference.extend([False] * self.momentum_reference_size)      # Fill in all elements of momentum_reference with False
+                    else:
+                        self.momentum_reference.append(False)
+
+                else:
+                    # Put PARTITION frame instead of the full frame into the queue
+                    self.momentum_reference.append(False)
+                    for partition_idx in range(3):
+                        if mse_differences[partition_idx] > self.MSE_range:
+                            queue_put_idx.append(partition_idx)
+                        # 小于MSE的情况上面已经record到了idx2res，这里不用care
+
+
+
+            # Put partition/full frames into the queue  这里只是管理queue的，其他的比如idx2res这些都在上面处理完了
+            if 3 in queue_put_idx:
+                # Full frame put into the queue
+                assert(len(queue_put_idx) == 1)     # We cannot have partition idx here
+                self.full_frame_cal_num += 1
+                self.inp_q_full.put((frame_idx, 3, frame))          # Full queue
+            else:
+                # Partition frame put into the queue
+                assert(3 not in queue_put_idx)      # We cannot have full idx here
+                for partition_idx in sorted(queue_put_idx):
+                    crop4partition(frame, eval("crop%s"%partition_idx)) 
+
+
+
 
             ####################################################################################################
 
-            #TODO: 这里每3帧才写入一次
-            # sleep(self.decode_sleep) # 这个要放在frame_write前面
-            if idx % 4 == 0:
-                #only write in even number, tries to load 3 frames each time before taking this
+
+            if frame_idx % 4 == 0:
+                # Write frames per 4 frame. We don't write for each frame because we want to save time that is 
+                # sleep(self.decode_sleep)      # If you need, put this in front of the frame_write
                 self.frame_write()
 
-        print("All Frames are put into section")
+        print("All Frames are decoded from the input video!")
         #########################################################################################################
 
 
         ################################################ 后面残留的计算 ##################################################
-        idx += 1 # 调整成frames总数量
+        frame_idx += 1 # 调整成frames总数量
         #等待所有的处理完,最后读取一遍全部的图片
         while True:
             self.frame_write()
@@ -519,7 +422,7 @@ class VideoUpScaler(object):
             # elif self.res_q.qsize() == 0 and idx == self.now_idx:
             #     break
 
-            if idx == self.now_idx:
+            if frame_idx == self.now_idx:
                 if self.inp_q is not None:
                     assert(self.inp_q.qsize() == 0)
                 assert(self.res_q.qsize() == 0)
@@ -550,7 +453,7 @@ class VideoUpScaler(object):
         full_time_spent = video_decode_loop_end - video_decode_loop_start
         total_exe_fps = self.total_frame_number / full_time_spent
         full_frame_portion = self.full_frame_cal_num / self.total_frame_number
-        partition_saved_portion = self.skip_counter_/(self.total_frame_number*3)
+        partition_saved_portion = self.skip_counter_ / (self.total_frame_number*3)
 
         # The most import report        
         print("Input path is %s and the report is the following:"%input_path)
@@ -583,6 +486,83 @@ class VideoUpScaler(object):
         report["momentum_used_num"] = self.momentum_used_num
 
         return report
+
+
+    def frame_write(self):
+        ''' Extract parition/full frame from res_q and write to ffmpeg writer (moviepy)
+        '''
+
+        #Step1：写入暂存器，因为多进程多线程的结果是不均匀出来的
+        while True:  # 取出处理好的所有结果
+            if self.res_q.empty():
+                break
+            iidx, position, res = self.res_q.get()
+            # print(res.shape)
+            self.idx2res[iidx][position] = res
+
+
+        #Step2: 把暂存器的内容写到writer中
+        while True:  # 按照idx排序写帧
+            if not self.res_q.empty():
+                iidx, position, res = self.res_q.get()
+                self.idx2res[iidx][position] = res
+
+            #这里一定保证是sequential的，所以repeat frame前面的reference完全有加载
+            if self.loop_counter == self.max_cache_loop:  #####这个系数也要config管理！#####
+                self.writer.close()
+                print("Ends at frame ", self.now_idx)
+                print("P: Continuously not found, end the program and store what's stored")
+                os._exit(0)
+
+            if not all(i in self.idx2res[self.now_idx] for i in [0, 1, 2]) and not 3 in self.idx2res[self.now_idx]:
+                self.loop_counter += 1
+                break
+            self.loop_counter = 0
+
+
+            #############################################下面确保了frame的所有部分都是在的################################################
+            if self.now_idx % 50 == 0:
+                print("Process {} had written frames: {}".format(self.process_id, self.now_idx))
+
+            # 3种类型的crop处理
+            if 3 not in self.idx2res[self.now_idx]:
+                crops = []
+                for i in [0, 1, 2]:
+                    if isinstance(self.idx2res[self.now_idx][i], int):
+                        target_idx = self.idx2res[self.now_idx][i]
+                        if 3 in self.idx2res[target_idx]:
+                            #这里就说明reference是一整块没有被切分成block，需要提取一下
+                            crops.append(crop4partition(self.idx2res[target_idx][3], i))
+                        else:
+                            crops.append(self.idx2res[target_idx][i])
+                    else:
+                        crops.append(self.idx2res[self.now_idx][i])
+
+                # print("output shape is ", crops[0].shape, crops[1].shape, crops[2].shape)
+                combined_frame = self.combine(*crops)  # adjust是完全固定的值
+            else:
+                #TODO: 如果后面FULL也要算MSE的话，这里就要写的更加复杂了
+                combined_frame = self.idx2res[self.now_idx][3]
+
+
+            cv2.imwrite(str(self.now_idx)+".png", cv2.cvtColor(combined_frame, cv2.COLOR_BGR2BGR))
+            self.writer.write_frame(combined_frame)
+
+
+            ###为了程序简单，多了Max_Same_Frame帧的cache
+            if self.now_idx > self.Max_Same_Frame:
+                del self.idx2res[self.now_idx - self.Max_Same_Frame]
+
+            self.now_idx += 1
+
+
+    def combine(self, crop1, crop2, crop3):
+        return np.concatenate((crop1, crop2, crop3))
+
+
+    def queue_put(self, frame_idx, i, crop ):
+        self.parition_processed_num += 1
+        self.inp_q.put((frame_idx, i, crop))
 
 
 

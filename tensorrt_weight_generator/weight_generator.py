@@ -24,6 +24,7 @@ root_path = os.path.abspath('.')
 sys.path.append(root_path)
 from config import configuration
 from process.utils import np2tensor
+from process.crop_utils import get_partition_height
 
 
 
@@ -179,11 +180,12 @@ def generate_partition_frame(full_frame_dir):
     # Cut the frame to three fold for Video redundancy acceleartion in inference.py
 
     img = cv2.imread(full_frame_dir)
-    h, w, _ = img.shape
-    partition_height = (h//3) + 8 # TODO: 这个+8只是一个简单的写法，实际上应该更加dynamic的分配
+    h, _, _ = img.shape
+    partition_height = get_partition_height(h)
+    
     
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    partition_img = img[:partition_height, :,:] # 第一个是width，第二个是height
+    partition_img = img[:partition_height, :,:]
     print("Partition Size (1in3) after crop is ", partition_img.shape)
     partition_frame_dir = configuration.partition_frame_dir
     cv2.imwrite(partition_frame_dir, partition_img)

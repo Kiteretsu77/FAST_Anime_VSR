@@ -42,10 +42,10 @@ class UpCunet2x(nn.Module):
 
 
 
-    def forward(self, x, position):
-        x = F.pad(x, (18, 18, 18, 18), 'reflect')  # pad最后一个倒数第二个dim各上下18个（总计36个）
+    def forward(self, input, position):
+        x = F.pad(input, (18, 18, 18, 18), 'reflect')  # pad最后一个倒数第二个dim各上下18个（总计36个）
 
-        ######################## Neural Network Process #############################
+        ######################## Neural Network Inference #############################
         unet_full_output = self.unet_model_full(x)
         #############################################################################
 
@@ -53,21 +53,21 @@ class UpCunet2x(nn.Module):
         ######################## Afetr Process ######################################
 
         # 根据各个frame的position（上面，中间，下面，还是全部）来进行拆分adjust
-        if position == 0:
-            x = unet_full_output[:, :, :-self.adjust_double, :]
-        elif position == 1:
-            x = unet_full_output[:, :, self.adjust_double:-self.adjust_double, :]
-        elif position == 2:
-            x = unet_full_output[:, :, self.adjust_double:, :]
-        elif position == 3:
-            # Full Frame Model
-            x = unet_full_output
-        else:
-            print("Error Type!")
+        # if position == 0:
+        #     x = unet_full_output[:, :, :-self.adjust_double, :]
+        # elif position == 1:
+        #     x = unet_full_output[:, :, self.adjust_double:-self.adjust_double, :]
+        # elif position == 2:
+        #     x = unet_full_output[:, :, self.adjust_double:, :]
+        # elif position == 3:
+        #     # Full Frame Model
+        #     x = unet_full_output
+        # else:
+        #     print("Error Type!")
 
         # TODO: 想办法加check是否是奇数的情况
         # 目前默认是pro mode (pro跟weight有关)
-        return ((x - 0.15) * (255/0.7)).round().clamp_(0, 255).byte()
+        return ((unet_full_output - 0.15) * (255/0.7)).round().clamp_(0, 255).byte()
 
         
     
@@ -89,9 +89,8 @@ class RealCuGAN_Scalar(object):
         if configuration.use_tensorrt:
             tensor = tensor.half()          # Must use half in tensorrt for float16, else the output is a black screen
 
-
+        # Inference here
         res = self.model(tensor, position)
-
 
         result = tensor2np(res)
         return result

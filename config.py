@@ -13,26 +13,27 @@ class configuration:
         pass
 
     
-    ######################################################  Frequently Edited Setting  #################################################### 
-    # Fundamental setting
-    # TODO: the rescale mechanism for Real-CUGAN and Real-ESRGAN need more consideration. Currently, what I preset is a rough format.
+    ######################################################  Frequently Edited Setting  ########################################################################################
+
+    ########################################################### Fundamental Setting ####################################################################
     use_rescale = False                     # For Real-CUGAN, If its scale != 2, we shrink to (scale/2) * Width/Height and then do SR upscale 2
                                             # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
-    scale = 4                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
-    model_name = "Real-ESRGAN"              # Supported: "Real-CUGAN" || "Real-ESRGAN"
+    scale = 2                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
+    model_name = "Real-CUGAN"               # Supported: "Real-CUGAN" || "Real-ESRGAN"
     inp_path = "../videos/crop.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
     opt_path = "../videos/crop_processed.mp4"       # Output path after processing video/s of inp_path
-    
+    ####################################################################################################################################################
+
 
     # Auxiliary setting
     decode_fps = 24             # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
-    use_tensorrt = True        # tensorrt increase speed a lot; so, it is highly recommended to install it
+    use_tensorrt = True         # Tensorrt increase speed a lot; So, it is highly recommended to install it
 
 
     # Multithread and Multiprocessing setting 
-    process_num = 2             # This is the fully parallel Process number
-    full_model_num = 2          # Full frame thread instance number
-    nt = 0                      # Partition frame (1/3 part of a frame) instance number 
+    process_num = 1             # This is the fully parallel Process number
+    full_model_num = 1          # Full frame thread instance number
+    nt = 1                      # Partition frame (1/3 part of a frame) instance number 
 
     # PS:
     #   Reference for my 5600x + 3090Ti setting for Real-CUGAN (almost full power)
@@ -41,12 +42,12 @@ class configuration:
     # 720P: 3 x (2 + 2)
     # 540P: 3 x (3 + 2)
     # 480P: 3 x (3 + 3)
-    ######################################################################################################################################
+    ##########################################################################################################################################################################
 
 
     ###########################################  General Details Setting  ################################################################
-    adjust = 6
-    left_mid_right_diff = [2, -2, 2] # Generally speaking, this is not needed to modify
+    pixel_padding = 6                                 # This value should be divisible by 3 (and 2 also)  
+    # left_mid_right_diff = [2, -2, 2]                # Generally speaking, this is not needed to modify
 
     # Architecture name or private info
     _architecture_dict = {"Real-CUGAN": "cunet", 
@@ -54,7 +55,7 @@ class configuration:
     architecture_name = _architecture_dict[model_name]
     
     _scale_base_dict = {"Real-CUGAN": 2, 
-                         "Real-ESRGAN": 4}
+                        "Real-ESRGAN": 4}
     scale_base = _scale_base_dict[model_name]
 
     ######################################################################################################################################
@@ -62,11 +63,9 @@ class configuration:
 
     ########################################  Redundancy Acceleration Setting  ###########################################################
     # This part is used for redundancy acceleration
-    MSE_range = 0.2                 # How much Mean Square Error difference between 2 frames you can tolerate (I choose 0.2) (The smaller it is, the better quality it will have)
-    Max_Same_Frame = 40             # how many frames/sub-farmes at most we can jump (40-70 is ok)
-
-    momentum = 4                    # choose 3/4 
-    mse_learning_rate = 0.005       # Momentum learning rate (the smaller the better visual qualitydetails)
+    MSE_range = 0.2                         # How much Mean Square Error difference between 2 frames you can tolerate (I choose 0.2) (The smaller it is, the better quality it will have)
+    Max_Same_Frame = 40                     # How many frames/sub-farmes at most we can jump (40-70 is ok)
+    momentum_skip_crop_frame_num = 4        # Use 3 || 4 
 
     # target_saved_portion = 0.2      #相对于30fps的，如果更加低的fps，应该等比例下降,这也只是个参考值而已，会努力adjust到这个范围，但是最多就0.08-0.7还是保证了performance的
     Queue_hyper_param = 700         #The larger the more queue size allowed and the more cache it will have (higher memory cost, less sleep)

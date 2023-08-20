@@ -52,6 +52,7 @@ class SEBlock(nn.Module):
         x = torch.mul(x, x0)
         return x
 
+
 class UNetConv(nn.Module):
     def __init__(self, in_channels, mid_channels, out_channels, se):
         super(UNetConv, self).__init__()
@@ -71,6 +72,7 @@ class UNetConv(nn.Module):
         if self.seblock is not None:
             z = self.seblock(z)
         return z
+
 
 class UNet1(nn.Module):
     def __init__(self, in_channels, out_channels, deconv):
@@ -131,6 +133,7 @@ class UNet1(nn.Module):
         x3 = F.leaky_relu(x3, 0.1, inplace=True)
         z = self.conv_bottom(x3)
         return z
+
 
 class UNet2(nn.Module):
     def __init__(self, in_channels, out_channels, deconv):
@@ -213,7 +216,6 @@ class UNet2(nn.Module):
         return z
 
 
-       
 
 if __name__ == "__main__":
     ###########inference_img

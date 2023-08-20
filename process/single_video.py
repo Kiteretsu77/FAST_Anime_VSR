@@ -16,6 +16,7 @@ root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
 from process.utils import check_input_support
 from tensorrt_weight_generator.weight_generator import generate_weight
+from process.crop_utils import get_partition_height
 
 
 
@@ -57,7 +58,6 @@ def weight_justify(config, video_input_dir):
     ''' Check if our needed weight is inside this folder. If it is, edit config; else, download and generate one
     '''
     
-
     # Find all supported resolution weight
     supported_res = collections.defaultdict(list)
     for weight_name in os.listdir(os.path.join(configuration.weights_dir, configuration.model_name)):
@@ -81,7 +81,7 @@ def weight_justify(config, video_input_dir):
 
 
     # Generate the TensorRT weight if needed
-    partition_height = (h//3) + config.adjust + abs(config.left_mid_right_diff[0])
+    partition_height = get_partition_height(video.h)
     if w not in supported_res or h not in supported_res[w] or partition_height not in supported_res[w]:
         print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported in current folder!")
         print("We are going to generate the weight now!!!")

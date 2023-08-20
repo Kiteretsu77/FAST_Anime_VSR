@@ -20,14 +20,12 @@ from process.mass_production import mass_process
 def configuration_sanity_check():
     if configuration.model_name == "Real-CUGAN":
         if configuration.scale != 2:
-            print("Curretly, Real-CUGAN only support scale of 2")
-            raise NotImplementedError()
+            raise NotImplementedError("Currently, Real-CUGAN only support scale of 2")
     elif configuration.model_name == "Real-ESRGAN":
         if configuration.scale != 4:
-            print("Curretly, Real-ESRGAN only support scale of 4")
-            raise NotImplementedError()
+            raise NotImplementedError("Currently, Real-ESRGAN only support scale of 4")
     else:
-        raise NotImplementedError()
+        raise NotImplementedError("We don't support such model right now!")
 
 
 def folder_prepare():
