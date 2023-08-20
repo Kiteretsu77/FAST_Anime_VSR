@@ -27,18 +27,18 @@ def mass_process(input_folder_dir, output_dir_parent):
 
 
     # if rename, we will rename the video easily
-    if configuration.rename:
-        video_lists = os.listdir(input_folder_dir)
-        video_num = len(video_lists)
-        total_idx_length = len(str(video_num))
-        for idx, filename in enumerate(sorted(video_lists)):
-            idx = idx + 1
-            format = filename.split('.')[-1]
-            new_name = "0"*(total_idx_length-len(str(idx))) + str(idx) + "." + format
+    # if configuration.rename:
+    #     video_lists = os.listdir(input_folder_dir)
+    #     video_num = len(video_lists)
+    #     total_idx_length = len(str(video_num))
+    #     for idx, filename in enumerate(sorted(video_lists)):
+    #         idx = idx + 1
+    #         format = filename.split('.')[-1]
+    #         new_name = "0"*(total_idx_length-len(str(idx))) + str(idx) + "." + format
 
-            input_dir = os.path.join(input_folder_dir, filename)
-            new_dir = os.path.join(input_folder_dir, new_name)
-            os.rename(input_dir, new_dir)
+    #         input_dir = os.path.join(input_folder_dir, filename)
+    #         new_dir = os.path.join(input_folder_dir, new_name)
+    #         os.rename(input_dir, new_dir)
 
 
     print("All files begin")
