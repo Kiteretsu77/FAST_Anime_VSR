@@ -157,9 +157,8 @@ class RRDBNet(nn.Module):
         num_grow_ch (int): Channels for each growth. Default: 32.
     """
 
-    def __init__(self, num_in_ch=3, num_out_ch=3, scale=2, num_feat=64, num_block=23, num_grow_ch=32):
-        # shllow blocks (it was 23 in the original paper)
-        num_block = configuration.RRDB_blocks_num
+    def __init__(self, num_in_ch=3, num_out_ch=3, scale=4, num_feat=64, num_block=6, num_grow_ch=32):
+        # [num_block=6] and [scale=4] for the small Anime weight
 
         super(RRDBNet, self).__init__()
         self.scale = scale

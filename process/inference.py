@@ -109,7 +109,9 @@ class VideoUpScaler(object):
         ###################################### Important Params ##################################################################################
         self.writer = None    # Used in Call function
         self.nt = configuration.nt
+        self.use_rescale = configuration.use_rescale
         self.scale = configuration.scale
+        self.model_name = configuration.model_name
         self.encode_params = configuration.encode_params
         self.decode_sleep = configuration.decode_sleep
         self.now_idx = 0
@@ -119,6 +121,15 @@ class VideoUpScaler(object):
         self.height = None
         self.process_id = process_id
         print("This process id is ", self.process_id)
+
+        # Set the scale base (the supported scale of their original model)
+        if configuration.model_name == "Real-CUGAN":
+            self.scale_base = 2
+        elif configuration.model_name == "Real-ESRGAN":
+            self.scale_base = 4
+        else:
+            raise NotImplementedError()
+
 
         if configuration.full_model_num == 0:
             self.max_cache_loop = max(int((configuration.nt + configuration.full_model_num) * configuration.Queue_hyper_param),
@@ -338,6 +349,10 @@ class VideoUpScaler(object):
 
 
     def __call__(self, input_path, output_path):
+        ''' Main Calling function
+        
+        '''
+
         ############################### Build PATH && INIT ############################################
         # Basic Path Preparation
         video_format = input_path.split(".")[-1]
@@ -355,7 +370,7 @@ class VideoUpScaler(object):
 
 
         if self.decode_fps == -1:
-            # use original fps as decode fps
+            # Use original fps as decode fps
             self.decode_fps = original_fps
         self.total_frame_number = int(self.decode_fps * (nframes/original_fps))
         #############################################################################################
@@ -370,21 +385,23 @@ class VideoUpScaler(object):
             self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
         else:
             self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params)
-        # 如果是1x scale，这个后面开始就要shrink了
-        if self.scale != 2:
-            self.width = int(self.width * (self.scale/2))
-            self.height = int(self.height * (self.scale/2))
+        
+        # Rescale for other scale
+        if self.use_rescale:
+            # Usually, self.scale < self.scale_base
+            self.width = int(self.width * (self.scale/self.scale_base))
+            self.height = int(self.height * (self.scale/self.scale_base))
         ##############################################################################################################################################
 
 
-        mse_total_spent = 0
+
         video_decode_loop_start = ttime()
         ######################################### video decode loop #######################################################
         for idx, frame in enumerate(objVideoreader.iter_frames(fps=self.decode_fps)): # 删掉了target fps
             
-            if self.scale != 2:
-                # if scale = 1/1.5, adjust output size at the beginning
-                frame = cv2.resize(frame, (self.width, self.height)) # , interpolation=cv2.INTER_LANCZOS4
+            if self.use_rescale:
+                # If scale != self.scale_base, adjust the image size at the beginning
+                frame = cv2.resize(frame, (self.width, self.height)) # interpolation=cv2.INTER_LANCZOS4
 
             if idx % 50 == 0 or int(self.total_frame_number) == idx:
                 # 以后print这边用config统一管理
@@ -408,7 +425,7 @@ class VideoUpScaler(object):
             if self.MSE_range != -1:
                 if self.nt > 0 and self.times2switchFULL <= 0:
                     ############################################## Split Frame  ########################################
-                    (crop0, crop1, crop2) = self.crop(frame)  # adjust要固定死, cropX后面是用eval控制的
+                    (crop0, crop1, crop2) = self.crop(frame)  # We use "cropX" to access these (They are not never used)
                     ####################################################################################################
 
                     changed_status = [0, 0, 0]
@@ -558,7 +575,6 @@ class VideoUpScaler(object):
         print("\t The Number of partitions put into small Upscaler (1in3) is %d which is %.2f %%" % (
                 self.parition_processed_num, 100 * self.parition_processed_num / (self.total_frame_number * 3)))
         print("\t Saved frames number: %d partitions which is %.2f %%" %(self.skip_counter_, 100*partition_saved_portion))
-        # print("mse_total_spent %.3f s"%(mse_total_spent))
         print("\t Total full_frame_cal_num is %.2f which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
         print("\t Total momentum used num is ", self.momentum_used_num)
         ################################################################################################################

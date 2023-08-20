@@ -7,15 +7,27 @@ import os, sys
 import shutil
 import collections
 from moviepy.editor import VideoFileClip
-# import multiprocessing
-# multiprocessing.set_start_method('spawn')
 
-# import from local folder
+
+# Import files from the local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
 from config import configuration
 from process.single_video import parallel_process
 from process.mass_production import mass_process
+
+
+def configuration_sanity_check():
+    if configuration.model_name == "Real-CUGAN":
+        if configuration.scale != 2:
+            print("Curretly, Real-CUGAN only support scale of 2")
+            raise NotImplementedError()
+    elif configuration.model_name == "Real-ESRGAN":
+        if configuration.scale != 4:
+            print("Curretly, Real-ESRGAN only support scale of 4")
+            raise NotImplementedError()
+    else:
+        raise NotImplementedError()
 
 
 def folder_prepare():
@@ -35,6 +47,10 @@ def folder_prepare():
 def main():
     ''' The main caller of all program, it will distinguish if the input is a folder or a single video and deal with them differently
     '''
+
+    # Configuration Sanity check
+    configuration_sanity_check()
+
     # Prepare folder
     folder_prepare()
 

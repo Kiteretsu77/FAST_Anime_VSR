@@ -110,7 +110,7 @@ class Generator:
             # Process RRDB (Real-ESRGAN)
             from Real_ESRGAN.rrdb import RRDBNet
             generator = RRDBNet()
-            model_weight = model_weight['model_state_dict']
+            model_weight = model_weight['params_ema']
             input = self.rrdb_preprocess(input)
 
         else:
@@ -234,24 +234,26 @@ def check_file():
     '''
         Check if the fundamental model weight exists; if not, download them
     '''
+
+    # Define the location and the weight name for the saved weight
     weight_store_path = os.path.join(configuration.weights_dir, configuration.model_name, configuration.architecture_name + "_weight.pth")
 
     if not os.path.exists(weight_store_path):
         print("There isn't " + weight_store_path + " under weights folder")
         network_url = {
             "Real-CUGAN": "https://drive.google.com/u/0/uc?id=1hc1Xh_1qBkU4iGzWxkThpUa5_W9t7GZ_&export=download",
-            "Real-ESRGAN" : ""
+            "Real-ESRGAN" : "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth"
         }
         
 
         # Automatically download Code, but if you want other weight, like less denoise, please go see https://drive.google.com/drive/folders/1jAJyBf2qKe2povySwsGXsVMnzVyQzqDD
-        print("We will automatically download pretrained weight of " + configuration.model_name + " from the google drive!!!")
+        print("We will automatically download pretrained weight of " + configuration.model_name + " !!!")
 
         # Download the content
         url = network_url[configuration.model_name]
         r = requests.get(url, allow_redirects=True)
 
-        # Store the content
+        # Store the weight to the target path
         open(weight_store_path, 'wb').write(r.content)
 
         print("Finish downloading pretrained weight!")

@@ -15,18 +15,22 @@ class configuration:
     
     ######################################################  Frequently Edited Setting  #################################################### 
     # Fundamental setting
-    scale = 1                                                       # Supported: 1 || 1.5 || 2  (If it's scale!=2, we shrink to (scale/2) * Width/Height and then do SR upscale 2)
-    model_name = "Real-ESRGAN"                                       # Supported: "Real-CUGAN" || "Real-ESRGAN" 
-    inp_path = "../test.mp4"                 # intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../test_processed.mp4"       # output path after processing video/s of inp_path
+    # TODO: the rescale mechanism for Real-CUGAN and Real-ESRGAN need more consideration. Currently, what I preset is a rough format.
+    use_rescale = False                    # For Real-CUGAN, If its scale != 2, we shrink to (scale/2) * Width/Height and then do SR upscale 2
+                                           # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
+    scale = 4                              # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
+    model_name = "Real-ESRGAN"              # Supported: "Real-CUGAN" || "Real-ESRGAN" (which only support 4x now)
+    inp_path = "../videos/crop.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../videos/crop_processed.mp4"       # Output path after processing video/s of inp_path
     
+
     # Auxiliary setting
     decode_fps = 24             # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 24 FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
     use_tensorrt = True        # tensorrt increase speed a lot; so, it is highly recommended to install it
 
 
     # Multithread and Multiprocessing setting 
-    process_num = 1             # This is the fully parallel Process number
+    process_num = 3             # This is the fully parallel Process number
     full_model_num = 2          # Full frame thread instance number
     nt = 2                      # Partition frame (1/3 part of a frame) instance number 
 
@@ -47,7 +51,6 @@ class configuration:
                          "Real-ESRGAN": "rrdb"}
     architecture_name = _architecture_dict[model_name]
 
-    RRDB_blocks_num = 7         # how many blocks RRDB you want to use; if you want to use original Real-ESRGAN weight, change this to 23; else, it it's my trained version, it's 7
     ######################################################################################################################################
     
 
