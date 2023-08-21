@@ -31,42 +31,20 @@ class UpRRDB2x(nn.Module):
             # Use original pretrained model
             self.rrdb_model = RRDBNet()
             model_weight = torch.load(os.path.join(configuration.weights_dir, configuration.model_name, configuration.architecture_name+'_weight.pth'))
-            if "pro" in model_weight:
-                del model_weight["pro"]
             self.rrdb_model.load_state_dict(model_weight, strict=True)
             self.rrdb_model.eval().cuda()
 
-
-        self.adjust_double = 2*adjust
         print("torch2trt full load+prepare time %.3f s"%(ttime() - load_start))
 
 
 
-    def forward(self, x, position):
-        # 这个pad不知道现在有没有用
-        # x = F.pad(x, (18, 18, 18, 18), 'reflect')           # pad最后一个倒数第二个dim各上下18个（总计36个）
+    def forward(self, x):
 
         ######################## Neural Network Process #############################
         output = self.rrdb_model(x)
         #############################################################################
 
-
-        ######################## After Process ######################################
-        # 根据各个frame的position（上面，中间，下面，还是全部）来进行拆分adjust
-        if position == 0:
-            x = output[:, :, :-self.adjust_double, :]
-        elif position == 1:
-            x = output[:, :, self.adjust_double:-self.adjust_double, :]
-        elif position == 2:
-            x = output[:, :, self.adjust_double:, :]
-        elif position == 3:
-            # Full Frame Model
-            x = output
-        else:
-            print("Error Position Type!")
-
-
-        return (x * 255).round().clamp_(0, 255).byte()
+        return (output * 255).round().clamp_(0, 255).byte()
 
         
     
@@ -90,9 +68,8 @@ class RealESRGAN_Scalar(object):
         if configuration.use_tensorrt:
             tensor = tensor.half()          # Must use half in tensorrt for float16, else the output is a black screen
 
-
-        res = self.model(tensor, position)
-
+        # Inference here
+        res = self.model(tensor)
 
         result = tensor2np(res)
         return result

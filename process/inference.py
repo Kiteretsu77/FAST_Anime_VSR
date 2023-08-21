@@ -14,7 +14,7 @@ s_print_lock = Lock()
 # import from local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
-from process.crop_utils import crop4partition
+from process.crop_utils import crop4partition, crop4partition_SR, combine_partitions_SR
 
 
 class UpScalerMT(threading.Thread):
@@ -51,14 +51,17 @@ class UpScalerMT(threading.Thread):
                     round(self.total_cost_time / self.total_counter_, 4)) + "s \n")
 
     def execute(self, np_frame, position):
-        '''
-            Send data(frames) to the model
+        ''' Send data(frames) to the model
         '''
         return self.model(np_frame, position)
 
 
     def inference(self, tmp):
-        idx, position, np_frame = tmp
+        '''
+        Args:
+            tmp (set): frame_idx (int), position (int, 0|1|2|3), np_frame (numpy)
+        '''
+        frame_idx, position, np_frame = tmp
 
         
         ####################### Neural Network Model Execuation ###########################
@@ -81,19 +84,21 @@ class UpScalerMT(threading.Thread):
             # sleep adjustment, Must have here else there may be bug
             sleep(uniform(self.p_sleep[0], self.p_sleep[1]))
 
-        return (idx, position, res)
+        return (frame_idx, position, res)
 
 
     def run(self):
         while True:
-            tmp = self.inp_q.get()
+            tmp = self.inp_q.get()      # frame_idx (int), position (int, 0|1|2|3), np_frame (numpy)
             if tmp == None:
+                # We can only break (end) the loop when all inputs are processed; else, we need to keep the loop
                 break
 
             if self.res_q.full():
                 print("Exception!!! res_q is full, Needs more optimization! Will pause some time!")
                 # sleep(1)
-            self.res_q.put(self.inference(tmp))
+            output = self.inference(tmp)
+            self.res_q.put(output)
 
 
 
@@ -126,13 +131,7 @@ class VideoUpScaler(object):
         print("This process id is ", self.process_id)
 
 
-        if self.full_model_num == 0:
-            self.max_cache_loop = max(int((self.nt + self.full_model_num) * configuration.Queue_hyper_param),
-                                      int(2 * configuration.Queue_hyper_param))
-        else:
-            self.max_cache_loop = max(int((self.nt//3 + self.full_model_num) * configuration.Queue_hyper_param),
-                                            int(2 * configuration.Queue_hyper_param))
-        print("max_cache_loop size is ", self.max_cache_loop)
+        self.max_cache_loop = (self.nt + self.full_model_num) * 200     # The is for bug report purpose (正常来说，取值要小于total frame num，不然就查不出来了)
         #################################################################################################################################
 
         ################################### Load model ##################################################################################
@@ -175,21 +174,21 @@ class VideoUpScaler(object):
         # Full Frame
         self.inp_q_full = None
         if self.full_model_num != 0:
-            Full_Frame_Queue_size = int( (self.full_model_num + 1) * configuration.Queue_hyper_param)
+            Full_Frame_Queue_size = int( (self.full_model_num + 1) * configuration.Queue_hyper_param//2)
             self.inp_q_full = Queue(Full_Frame_Queue_size) # queue of full frame
             print("Total FUll Queue size is ", Full_Frame_Queue_size)
 
         # Sub Frame 
         self.inp_q = None
         if self.nt != 0:
-            Divided_Block_Queue_size = int( (self.nt) * configuration.Queue_hyper_param//2)
+            Divided_Block_Queue_size = int( (self.nt) * configuration.Queue_hyper_param)
+            self.inp_q = Queue(Divided_Block_Queue_size)  # queue of partition frame
             print("Total Divided_Block_Queue_size is ", Divided_Block_Queue_size)
-            self.inp_q = Queue(Divided_Block_Queue_size)  # 抽帧缓存上限帧数
         
         # In total
-        Res_q_size = int( (self.nt + self.full_model_num) * configuration.Queue_hyper_param//2)
-        print("res_q size is ", Res_q_size)
-        self.res_q = Queue(Res_q_size)  # Super-Resolved Frames Cache
+        res_q_size = int( (self.nt + self.full_model_num) * configuration.Queue_hyper_param)
+        self.res_q = Queue(res_q_size)  # Super-Resolved Frames Cache
+        print("res_q size is ", res_q_size)
         self.idx2res = collections.defaultdict(dict)
         ####################################################################################################################
 
@@ -207,10 +206,8 @@ class VideoUpScaler(object):
         for idx in range(self.full_model_num):
             print(configuration.model_name + " full : " + str(idx))
             model = NN_model(weight_path_full_path, self.pixel_padding)
-            print("pass model init")
             upscaler_full = UpScalerMT("FULL", self.inp_q_full, self.res_q, model, configuration.p_sleep, 1)
             upscaler_full.start()
-            print("pass UpScalerMT start")
 
         # Partition Frame Model
         print("Partition Model Preparation")
@@ -285,7 +282,7 @@ class VideoUpScaler(object):
 
             # Check if NN process too slow to catch up the frames decoded
             decode_processed_diff = frame_idx - self.now_idx
-            if decode_processed_diff >= 650:
+            if decode_processed_diff >= 650:        # This is an empirical value
                 #TODO: 这个插值也要假如config中
                 self.frame_write()
                 if decode_processed_diff >= 1000:
@@ -339,7 +336,7 @@ class VideoUpScaler(object):
 
                     else:   # Calculate MSE error
                         # Record the frame error
-                        frame_err = np.square(self.reference_frame[i] - cropX[:, :, 0]).mean()      # 以前测试过，MAE速度也不会快
+                        frame_err = np.square(self.reference_frame[i] - cropX[:, :, 0], dtype=np.float32).mean()      # We must use float32 here for precision (else, it's int8); Also, MAE speed has no distinct difference
                         mse_differences[i] = frame_err
     
 
@@ -368,12 +365,12 @@ class VideoUpScaler(object):
                     for partition_idx in range(3):
                         if mse_differences[partition_idx] > self.MSE_range:
                             # Two frames have limited similarity, Reset reference_frame and reference_idx;
-                            self.reference_frame[i] = cropX[:, :, 0]
-                            self.reference_idx[i] = frame_idx
+                            self.reference_frame[partition_idx] = cropX[:, :, 0]
+                            self.reference_idx[partition_idx] = frame_idx
                             queue_put_idx.append(partition_idx)
                         else:
                             # Two frames has very high similarity, Put reference to idx2res from reference_idx
-                            self.idx2res[frame_idx][i] = self.reference_idx[i]
+                            self.idx2res[frame_idx][partition_idx] = self.reference_idx[partition_idx]
                             self.skip_counter_ += 1
 
 
@@ -382,12 +379,13 @@ class VideoUpScaler(object):
                 # Full frame put into the queue
                 assert(len(queue_put_idx) == 1)     # We cannot have partition idx here
                 self.full_frame_cal_num += 1
-                self.inp_q_full.put((frame_idx, 3, frame))          # Full queue
+                self.queue_put(frame_idx, 3, frame, full = True)
             else:
                 # Partition frame put into the queue
                 assert(3 not in queue_put_idx)      # We cannot have full idx here
                 for partition_idx in sorted(queue_put_idx):
-                    crop4partition(frame, eval("crop%s"%partition_idx)) 
+                    cropped_frame = eval("crop%s"%partition_idx)
+                    self.queue_put(frame_idx, partition_idx, cropped_frame, full = False)
 
             ####################################################################################################################
 
@@ -412,6 +410,7 @@ class VideoUpScaler(object):
             #     break
 
             if frame_idx == self.now_idx:
+                # If we process till the last index, we can end the loop
                 if self.inp_q is not None:
                     assert(self.inp_q.qsize() == 0)
                 assert(self.res_q.qsize() == 0)
@@ -499,12 +498,14 @@ class VideoUpScaler(object):
             if self.loop_counter == self.max_cache_loop:  #####这个系数也要config管理！#####
                 self.writer.close()
                 print("Ends at frame ", self.now_idx)
-                print("P: Continuously not found, end the program and store what's stored")
+                print("\t Continuously not found, end the program and store what's stored")
                 os._exit(0)
 
             # Neither all parition nor single whole frame inside the idx2res, break this loop
             if not all(i in self.idx2res[self.now_idx] for i in [0, 1, 2]) and not 3 in self.idx2res[self.now_idx]:
                 self.loop_counter += 1
+                if self.loop_counter > 50:
+                    print(self.loop_counter)
                 break
             self.loop_counter = 0
 
@@ -517,43 +518,55 @@ class VideoUpScaler(object):
             if 3 not in self.idx2res[self.now_idx]:
                 # Partition Frame cases
                 crops = []
-                for i in [0, 1, 2]:
-                    if isinstance(self.idx2res[self.now_idx][i], int):
-                        # It means that this one is an index based (with a reference that has high similarity that we can skip its inference)
-                        target_idx = self.idx2res[self.now_idx][i]
+                for idx in [0, 1, 2]:
+                    if isinstance(self.idx2res[self.now_idx][idx], int):
+                        # This one is an index based (with a reference that has high similarity that we can skip its inference)
+                        target_idx = self.idx2res[self.now_idx][idx]
                         if 3 in self.idx2res[target_idx]:
                             # This means that the reference is a whole frame, we need to crop it to extract.
-                            crops.append(crop4partition(self.idx2res[target_idx][3], i))
-                        else:
-                            crops.append(self.idx2res[target_idx][i])   # Extract directly
+                            crops.append(crop4partition_SR(self.idx2res[target_idx][3], idx))
+                        else: 
+                            crops.append(self.idx2res[target_idx][idx])   # Extract directly
                     else:
-                        # This means that it is a part we just inferenced it out
-                        crops.append(self.idx2res[self.now_idx][i])
+                        # This one is NN inferenced result
+                        crops.append(self.idx2res[self.now_idx][idx])
 
-                combined_frame = self.combine(*crops)  # adjust是完全固定的值
+                combined_frame = combine_partitions_SR(*crops)  # adjust是完全固定的值
             else:
                 # Full frame cases
                 combined_frame = self.idx2res[self.now_idx][3]
 
             # Write the frame
-            # cv2.imwrite(str(self.now_idx)+".png", cv2.cvtColor(combined_frame, cv2.COLOR_BGR2BGR))
+            # cv2.imwrite(str(self.now_idx)+".png", cv2.cvtColor(combined_frame, cv2.COLOR_BGR2RGB))  # For Debug purpose (这个只能process=1的时候，不然会相互write without protection)
             self.writer.write_frame(combined_frame)
 
 
-            # Delete some frame or index in idx2res to save the memory
+            # Delete frame or index in idx2res to save the memory
             if self.now_idx > self.Max_Same_Frame:
                 del self.idx2res[self.now_idx - self.Max_Same_Frame]
 
             self.now_idx += 1   # Update the index of frames we have already inferenced and encoded.
 
 
-    def combine(self, crop1, crop2, crop3):
-        return np.concatenate((crop1, crop2, crop3))
 
+    def queue_put(self, frame_idx, position, frame, full):
+        ''' Put into the queue (集中管理)
+        Args:
+            frame_idx (int):    Global frame index
+            position (int):     Position of frame 0|1|2|3
+            frame (numpy):      The numpy format of the image
+            full (bool):        If we use the full queue (when it's False, we use partition queue)
+        '''
+        # print("put info is ", frame_idx, position, frame.shape)
 
-    def queue_put(self, frame_idx, i, crop ):
-        self.parition_processed_num += 1
-        self.inp_q.put((frame_idx, i, crop))
+        # For either queue, we need to send corresponding frame index and its position, such that the program can correspond each frame in after-process
+        if full:
+            # Full queue put
+            self.inp_q_full.put((frame_idx, 3, frame))          # Full queue
+        else:
+            # Partition queue put
+            self.inp_q.put((frame_idx, position, frame))        # Partition frame
+            self.parition_processed_num += 1
 
 
 

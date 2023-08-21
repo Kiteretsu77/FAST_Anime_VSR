@@ -36,13 +36,11 @@ class UpCunet2x(nn.Module):
             self.unet_model_full.load_state_dict(model_weight, strict=True)
             self.unet_model_full.eval().cuda()
 
-
-        self.adjust_double = 2*adjust
         print("torch2trt unet full load+prepare time %.3f s"%(ttime() - load_start))
 
 
 
-    def forward(self, input, position):
+    def forward(self, input):
         x = F.pad(input, (18, 18, 18, 18), 'reflect')  # pad最后一个倒数第二个dim各上下18个（总计36个）
 
         ######################## Neural Network Inference #############################
@@ -50,22 +48,6 @@ class UpCunet2x(nn.Module):
         #############################################################################
 
 
-        ######################## Afetr Process ######################################
-
-        # 根据各个frame的position（上面，中间，下面，还是全部）来进行拆分adjust
-        # if position == 0:
-        #     x = unet_full_output[:, :, :-self.adjust_double, :]
-        # elif position == 1:
-        #     x = unet_full_output[:, :, self.adjust_double:-self.adjust_double, :]
-        # elif position == 2:
-        #     x = unet_full_output[:, :, self.adjust_double:, :]
-        # elif position == 3:
-        #     # Full Frame Model
-        #     x = unet_full_output
-        # else:
-        #     print("Error Type!")
-
-        # TODO: 想办法加check是否是奇数的情况
         # 目前默认是pro mode (pro跟weight有关)
         return ((unet_full_output - 0.15) * (255/0.7)).round().clamp_(0, 255).byte()
 
@@ -90,7 +72,7 @@ class RealCuGAN_Scalar(object):
             tensor = tensor.half()          # Must use half in tensorrt for float16, else the output is a black screen
 
         # Inference here
-        res = self.model(tensor, position)
+        res = self.model(tensor)
 
         result = tensor2np(res)
         return result
