@@ -1,6 +1,6 @@
 # FAST Anime VSRR (Video Super-Resolution and Restoration)
 This is a repository to accelerate the Super-Resolution (**SR**) process of Anime videos.
-It's initially based on Real-CuGAN (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/README_EN.md). 
+It's initially based on Real-CuGAN (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/README_EN.md) and Real-ESRGAN (https://github.com/xinntao/Real-ESRGAN). 
 I implement it in **TensorRT** version and utilized a frame division algorithm (self-designed) to accelerate it (with a video redundancy jump mechanism [similar to video compression Inter-Prediction] and a momentum mechanism). Plus, I use FFMPEG to decode a smaller FPS for faster processing but the quality drop is extremely negligible. Plus, I use multiprocessing and multithreading to completely consume all computation resources. Feel free to look at this slide [https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p] for the implementation and algorithm I have used.
 
 In my **3060Ti** Desktop version, it can process <span style="color:red">**faster than the Real-Time Anime videos**</span>, which means that **when you finish watching the first Anime video, your second Anime SR video is already processed, and you just need to click it to continue watching the next one**.
