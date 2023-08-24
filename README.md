@@ -97,7 +97,7 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
     * Please strictly Follow https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-zip 
     * After finishing these steps, you should be able to "import tensorrt" in python (starts a new window to run this)
     * Don't forget to add PATH to environmental variables based on their requirement.
-    * Step 6 in the document is not very needed.
+    * Step 6 (Visual Studio Verification) in the document is not very needed.
   
 4. Install torch2trt (<span style="color:red">**Don't directly use pip install torch2trt**</span>)
     * Follow https://nvidia-ai-iot.github.io/torch2trt/v0.4.0/getting_started.html   (I install **Without** plugins)
