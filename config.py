@@ -18,10 +18,10 @@ class configuration:
     ########################################################### Fundamental Setting ####################################################################
     use_rescale = False                     # For Real-CUGAN, If its scale != 2, we shrink to (scale/2) * Width/Height and then do SR upscale 2
                                             # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
-    scale = 4                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
-    model_name = "Real-ESRGAN"               # Supported: "Real-CUGAN" || "Real-ESRGAN"
-    inp_path = "../videos/crop.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../videos/crop_processed.mp4"       # Output path after processing video/s of inp_path
+    scale = 2                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
+    model_name = "Real-CUGAN"               # Supported: "Real-CUGAN" || "Real-ESRGAN"
+    inp_path = "../403.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../403_processed.mp4"       # Output path after processing video/s of inp_path
     ####################################################################################################################################################
 
 

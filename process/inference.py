@@ -378,7 +378,6 @@ class VideoUpScaler(object):
             if 3 in queue_put_idx:
                 # Full frame put into the queue
                 assert(len(queue_put_idx) == 1)     # We cannot have partition idx here
-                self.full_frame_cal_num += 1
                 self.queue_put(frame_idx, 3, frame, full = True)
             else:
                 # Partition frame put into the queue

@@ -40,6 +40,15 @@ def folder_prepare():
     if not os.path.exists(folder_dir):
         os.mkdir(folder_dir)
  
+def check_file_existence(path):
+    '''
+        Check if this path exists
+    '''
+
+    if not os.path.exists(path):
+        print("The program cannot locate {}, so we end the program. Please verify the existence of this file".format(path))
+        os._exit(0)
+
 
 
 def main():
@@ -55,6 +64,9 @@ def main():
     # Convenient attribute here
     input_path  = configuration.inp_path
     output_path = configuration.opt_path
+
+    # Check file existence input_path
+    check_file_existence(input_path)
 
 
     # Handle a whole directory

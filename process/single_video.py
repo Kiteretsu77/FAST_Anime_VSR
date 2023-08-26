@@ -98,7 +98,6 @@ def weight_justify(config, video_input_dir):
     # Edit the model base name for existed weight (This will be used in inference by directly accessing configuration)
     model_full_name = str(w) + "X" + str(h)
     model_partition_name = str(w) + "X" + str(partition_height)
-    # print("The full frame name is {} and partition frame name is {} ".format(configuration.model_full_name, configuration.model_partition_name))
 
 
     return (model_full_name, model_partition_name)
@@ -176,7 +175,7 @@ def parallel_process(input_path, output_path, parallel_num = 2):
 
     # Prepare TensorRT weight (Detect this every time when you are processing a different video)
     model_full_name, model_partition_name = weight_justify(configuration, input_path)
-    print("The full frame name is {} and partition frame name is {} ".format(configuration.model_full_name, configuration.model_partition_name))
+    print("The full frame name is {} and partition frame name is {} ".format(model_full_name, model_partition_name))
 
     # Extract subtitle automatically no matter if it has or not
     extract_subtitle(input_path)

@@ -147,8 +147,8 @@ class Generator:
 
         # 测试一下output
         output = model_trt_model(input)
-        print("Sample input shape is ", input.shape)
-        print("Sample output shape is ", output.shape)
+        print("TensorRT Sample input shape is ", input.shape)
+        print("TensoRT Sample output shape is ", output.shape)
 
         return output
         

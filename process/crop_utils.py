@@ -57,7 +57,7 @@ def crop4partition(img, position = 3):
         return (crop1, crop2, crop3)
     
     else:
-        raise NotImplementedError("We didn't find such position of the frame ")
+        raise NotImplementedError("This position crop is not supported!")
 
 
 def crop4partition_SR(img, position = 3):
