@@ -163,11 +163,10 @@ class VideoUpScaler(object):
         self.pixel_padding = configuration.pixel_padding
         self.full_frame_cal_num = 0
         self.momentum_skip_crop_frame_num = configuration.momentum_skip_crop_frame_num
-        self.momentum_reference_size = 3 # queue size
-        self.time2switchFULL = 0
-        self.momentum_used_num = 0
+        self.time2switchFULL = 0                # This counter presents number of frames we need to use momentum
+        self.momentum_used_times = 0            # This counter record how many processes are processed in full due to the momentum mechanism
+        self.momentum_reference_size = 3        # Momentum Queue size (Use momentum when this number of value in the queue is True)
         self.momentum_reference = collections.deque([False]*self.momentum_reference_size, maxlen=self.momentum_reference_size)
-        # PS: momentum_reference is a fixed length queue that records if 
         ###################################################################################################################################
 
         ############################### MultiThread And MultiProcess ######################################################
@@ -309,7 +308,9 @@ class VideoUpScaler(object):
                     self.reference_idx[i] = frame_idx
             
             elif self.time2switchFULL > 0:  # Use Momentum 
-                self.time2switchFULL -= 1   # Update the counter
+                self.time2switchFULL -= 1       # Update the counter
+                self.momentum_used_times += 1   # Update the number of frames we process with momentum
+
                 # 根据full_model_num和nt 进行调整
                 if self.full_model_num > 0:
                     queue_put_idx = [3]
@@ -440,7 +441,7 @@ class VideoUpScaler(object):
         full_time_spent = video_decode_loop_end - video_decode_loop_start
         total_exe_fps = self.total_frame_number / full_time_spent
         full_frame_portion = self.full_frame_cal_num / self.total_frame_number
-        partition_saved_portion = self.skip_counter_ / (self.total_frame_number*3)
+        partition_saved_portion = self.skip_counter_ / (self.total_frame_number*3)      # The three means that there is three partitions. This is a hard-coded version
 
         # The most import report        
         print("Input path is %s and the report is the following:"%input_path)
@@ -455,9 +456,9 @@ class VideoUpScaler(object):
         print("The following is the detailed report:")
         print("\t The Number of partitions put into small Upscaler (1in3) is %d which is %.2f %%" % (
                 self.parition_processed_num, 100 * self.parition_processed_num / (self.total_frame_number * 3)))
-        print("\t Saved frames number: %d partitions which is %.2f %%" %(self.skip_counter_, 100*partition_saved_portion))
+        print("\t Saved frames number: %d partitions which is %.2f %% of the full area" %(self.skip_counter_, 100*partition_saved_portion))
         print("\t Total full_frame_cal_num is %.2f which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
-        print("\t Total momentum used num is ", self.momentum_used_num)
+        print("\t Total momentum used num is ", self.momentum_used_times)
         ################################################################################################################
         
 
@@ -470,7 +471,7 @@ class VideoUpScaler(object):
         report["parition_processed_num"] = self.parition_processed_num
         report["skip_counter"] = self.skip_counter_
         report["full_frame_cal_num"] = self.full_frame_cal_num
-        report["momentum_used_num"] = self.momentum_used_num
+        report["momentum_used_times"] = self.momentum_used_times
 
         return report
 
@@ -503,8 +504,6 @@ class VideoUpScaler(object):
             # Neither all parition nor single whole frame inside the idx2res, break this loop
             if not all(i in self.idx2res[self.now_idx] for i in [0, 1, 2]) and not 3 in self.idx2res[self.now_idx]:
                 self.loop_counter += 1
-                if self.loop_counter > 50:
-                    print(self.loop_counter)
                 break
             self.loop_counter = 0
 
