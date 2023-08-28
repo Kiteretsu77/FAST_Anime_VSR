@@ -295,6 +295,8 @@ class VideoUpScaler(object):
             queue_put_idx = []      # 0, 1, 2 are the partition frame, 3 is the full frame 
             (crop0, crop1, crop2) = crop4partition(frame)  # We use "cropX" to access these variables
             
+            if frame_idx == 25:
+                print(frame_idx)
 
             if frame_idx == 0: 
                 # For the first frame, we just put into a whole frame into the sequence
@@ -302,6 +304,7 @@ class VideoUpScaler(object):
                 queue_put_idx = [3]
 
                 # Init the reference_frame and reference_idx
+                # TODO: reference_frame && reference_idx 写到一个func中
                 for i in range(3):
                     cropX = eval("crop%s"%i)
                     self.reference_frame[i] = cropX[:, :, 0]            # We only store Single Red Channel to compare to accelerate
@@ -325,19 +328,14 @@ class VideoUpScaler(object):
                     # Calculate MSE for each crop partition
                     cropX = eval("crop%s"%i)
 
-                    if self.reference_frame[i] is None:     
-                        # Add Reference if it is none
+                    if self.reference_frame[i] is None or (frame_idx - self.reference_idx[i]) >= self.Max_Same_Frame:     
+                        # Add Reference if it is none or more than the designated maximum same frame we allow
                         self.reference_frame[i] = cropX[:, :, 0]            # We only store Single Red Channel to compare to accelerate
                         self.reference_idx[i] = frame_idx
 
-                    elif (frame_idx - self.reference_idx[i]) >= self.Max_Same_Frame:
-                        # We exceed the maximum reference images we set, Reset the reference again
-                        self.reference_frame[i] = cropX[:, :, 0]
-                        self.reference_idx[i] = frame_idx
-
-                    else:   # Calculate MSE error
-                        # Record the frame error
-                        frame_err = np.square(self.reference_frame[i] - cropX[:, :, 0], dtype=np.float32).mean()      # We must use float32 here for precision (else, it's int8); Also, MAE speed has no distinct difference
+                    else:   # Calculate MAE error
+                        # Record the MSE between two frames
+                        frame_err = np.sum((self.reference_frame[i] - cropX[:, :, 0])**2) / float(cropX.shape[0] * cropX.shape[1])     # We must use float32 here for precision (else, it's int8); Also, MAE speed has no distinct difference
                         mse_differences[i] = frame_err
     
 
@@ -348,22 +346,37 @@ class VideoUpScaler(object):
                     queue_put_idx = [3]
 
                     # Check if we need to activate the MOMENTUM mechanism when the change of motion is too much
-                    if all(status > 5 for status in mse_differences):  # 5 is an empirical value
+                    if all(mse_value > 5 and mse_value != float("inf") for mse_value in mse_differences):  # 5 is an empirical value (mse_value cannot be inf, because this is frame after momentum or more than Max Same Frame)
                         self.momentum_reference.append(True)
                         if sum(self.momentum_reference) == self.momentum_reference_size:
                             # If we have momentum_reference_size amount of frames that have big MSE difference between consequent frames, we activate MOMENTUM mechanism
                             # 考虑到reference_frame的重置，我们time2switchFULL影响到的frame是 momentum_skip_crop_frame_num + 1
+                            # print("We need to use momentum at frame {}".format(frame_idx))
                             self.time2switchFULL = self.momentum_skip_crop_frame_num                    # Set how many frames we will skip
                             self.reference_frame = [None, None, None]                                   # Reset reference
                             self.reference_idx = [-1, -1, -1]                                           # Reset reference
                             self.momentum_reference.extend([False] * self.momentum_reference_size)      # Fill in all elements of momentum_reference with False
+                        else:
+                            # Update the Parition and idx
+                            for partition_idx in range(3):
+                                cropX = eval("crop%s"%partition_idx)
+                                self.reference_frame[partition_idx] = cropX[:, :, 0]
+                                self.reference_idx[partition_idx] = frame_idx
                     else:
+                        # Reset the reference_frame and reference_idx
                         self.momentum_reference.append(False)
+
+                        # Update the Parition and idx
+                        for partition_idx in range(3):
+                            cropX = eval("crop%s"%partition_idx)
+                            self.reference_frame[partition_idx] = cropX[:, :, 0]
+                            self.reference_idx[partition_idx] = frame_idx
 
                 else:
                     # Put PARTITION frame instead of the full frame into the queue
                     self.momentum_reference.append(False)       # Update momentum record
                     for partition_idx in range(3):
+                        cropX = eval("crop%s"%partition_idx)
                         if mse_differences[partition_idx] > self.MSE_range:
                             # Two frames have limited similarity, Reset reference_frame and reference_idx;
                             self.reference_frame[partition_idx] = cropX[:, :, 0]
@@ -373,6 +386,7 @@ class VideoUpScaler(object):
                             # Two frames has very high similarity, Put reference to idx2res from reference_idx
                             self.idx2res[frame_idx][partition_idx] = self.reference_idx[partition_idx]
                             self.skip_counter_ += 1
+                            # print("We skip frame_idx {} and partition_idx {}!".format(frame_idx, partition_idx))
 
 
             # Put partition/full frames into the queue  这里只是管理queue的，其他的比如idx2res这些都在上面处理完了(样子设计就是为了更好的程序设计)
@@ -381,7 +395,7 @@ class VideoUpScaler(object):
                 assert(len(queue_put_idx) == 1)     # We cannot have partition idx here
                 self.queue_put(frame_idx, 3, frame, full = True)
             else:
-                # Partition frame put into the queue
+                # Partition frame put into the queue (the queue may be empty)
                 assert(3 not in queue_put_idx)      # We cannot have full idx here
                 for partition_idx in sorted(queue_put_idx):
                     cropped_frame = eval("crop%s"%partition_idx)
