@@ -386,7 +386,7 @@ class VideoUpScaler(object):
                             # Two frames has very high similarity, Put reference to idx2res from reference_idx
                             self.idx2res[frame_idx][partition_idx] = self.reference_idx[partition_idx]
                             self.skip_counter_ += 1
-                            # print("We skip frame_idx {} and partition_idx {}!".format(frame_idx, partition_idx))
+                            print("We skip frame_idx {} and partition_idx {}!".format(frame_idx, partition_idx))
 
 
             # Put partition/full frames into the queue  这里只是管理queue的，其他的比如idx2res这些都在上面处理完了(样子设计就是为了更好的程序设计)
@@ -468,10 +468,10 @@ class VideoUpScaler(object):
 
         # Details report
         print("The following is the detailed report:")
+        print("\t Saved frames number: %d partitions which is %.2f %% of the full area" %(self.skip_counter_, 100*partition_saved_portion))
         print("\t The Number of partitions put into small Upscaler (1in3) is %d which is %.2f %%" % (
                 self.parition_processed_num, 100 * self.parition_processed_num / (self.total_frame_number * 3)))
-        print("\t Saved frames number: %d partitions which is %.2f %% of the full area" %(self.skip_counter_, 100*partition_saved_portion))
-        print("\t Total full_frame_cal_num is %.2f which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
+        print("\t Total full_frame_cal_num is %d which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
         print("\t Total momentum used num is ", self.momentum_used_times)
         ################################################################################################################
         

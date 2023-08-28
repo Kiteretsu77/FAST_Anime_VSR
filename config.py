@@ -20,8 +20,8 @@ class configuration:
                                             # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
     scale = 2                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
     model_name = "Real-CUGAN"               # Supported: "Real-CUGAN" || "Real-ESRGAN"
-    inp_path = "../White_Album/02.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../White_Album_processed/02.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
+    inp_path = "../videos/steins0.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../videos/steins0_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
     ####################################################################################################################################################
 
 
@@ -31,7 +31,7 @@ class configuration:
     use_rename = False           # Sometimes the video that users download may include unsupported characters, so we rename it if this one is True
 
     # Multithread and Multiprocessing setting 
-    process_num = 1             # This is the fully parallel Process number
+    process_num = 3             # The numver of times we split the video and process totally in parallel
     full_model_num = 2          # Full frame thread instance number
     nt = 2                      # Partition frame (1/3 part of a frame) instance number 
 
@@ -63,11 +63,11 @@ class configuration:
 
     ########################################  Redundancy Acceleration Setting  ###########################################################
     # This part is used for redundancy acceleration
-    MSE_range = 0.5                         # How much Mean Square Error difference between 2 frames you can tolerate (I choose 0.2) (The smaller it is, the better quality it will have)
+    MSE_range = 0.2                         # How much Mean Square Error difference between 2 frames you can tolerate (I choose 0.2) (The smaller it is, the better quality it will have)
     Max_Same_Frame = 40                     # How many frames/sub-farmes at most we can jump (40-70 is ok)
     momentum_skip_crop_frame_num = 4        # Use 3 || 4 
 
-    # target_saved_portion = 0.2      #相对于30fps的，如果更加低的fps，应该等比例下降,这也只是个参考值而已，会努力adjust到这个范围，但是最多就0.08-0.7还是保证了performance的
+    target_saved_portion = 0.2      #相对于30fps的，如果更加低的fps，应该等比例下降,这也只是个参考值而已，会努力adjust到这个范围，但是最多就0.08-0.7还是保证了performance的
     Queue_hyper_param = 700         #The larger the more queue size allowed and the more cache it will have (higher memory cost, less sleep)
 
     ######################################################################################################################################
