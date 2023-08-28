@@ -13,4 +13,4 @@ pip install tensorrt_lean-8.6.0-cp310-none-win_amd64.whl
 pip install tensorrt-8.6.0-cp310-none-win_amd64.whl
 git clone https://github.com/NVIDIA-AI-IOT/torch2trt
 cd torch2trt
-python setup.py install
+call python setup.py install
