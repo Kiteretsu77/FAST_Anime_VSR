@@ -141,11 +141,9 @@ class VideoUpScaler(object):
 
         if configuration.use_tensorrt:
             weight_path_partition_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_partition_name + '_float16_weight.pth')
-            print(weight_path_partition_path)
             assert(os.path.exists(weight_path_partition_path))
             if self.full_model_num != 0:
                 weight_path_full_path = os.path.join(configuration.weights_dir, configuration.model_name, 'trt_' + model_full_name + '_float16_weight.pth')
-                print(weight_path_partition_path)
                 assert(os.path.exists(weight_path_full_path))
 
         #################################################################################################################################
@@ -294,9 +292,6 @@ class VideoUpScaler(object):
 
             queue_put_idx = []      # 0, 1, 2 are the partition frame, 3 is the full frame 
             (crop0, crop1, crop2) = crop4partition(frame)  # We use "cropX" to access these variables
-            
-            if frame_idx == 25:
-                print(frame_idx)
 
             if frame_idx == 0: 
                 # For the first frame, we just put into a whole frame into the sequence
@@ -386,7 +381,7 @@ class VideoUpScaler(object):
                             # Two frames has very high similarity, Put reference to idx2res from reference_idx
                             self.idx2res[frame_idx][partition_idx] = self.reference_idx[partition_idx]
                             self.skip_counter_ += 1
-                            print("We skip frame_idx {} and partition_idx {}!".format(frame_idx, partition_idx))
+                            # print("We skip frame_idx {} and partition_idx {}!".format(frame_idx, partition_idx))
 
 
             # Put partition/full frames into the queue  这里只是管理queue的，其他的比如idx2res这些都在上面处理完了(样子设计就是为了更好的程序设计)
@@ -455,7 +450,7 @@ class VideoUpScaler(object):
         full_time_spent = video_decode_loop_end - video_decode_loop_start
         total_exe_fps = self.total_frame_number / full_time_spent
         full_frame_portion = self.full_frame_cal_num / self.total_frame_number
-        partition_saved_portion = self.skip_counter_ / (self.total_frame_number*3)      # The three means that there is three partitions. This is a hard-coded version
+        partition_saved_portion = self.skip_counter_ / (self.total_frame_number*3)      # This 3 means that there are three partitions. This is a hard-coded design
 
         # The most import report        
         print("Input path is %s and the report is the following:"%input_path)
@@ -472,7 +467,7 @@ class VideoUpScaler(object):
         print("\t The Number of partitions put into small Upscaler (1in3) is %d which is %.2f %%" % (
                 self.parition_processed_num, 100 * self.parition_processed_num / (self.total_frame_number * 3)))
         print("\t Total full_frame_cal_num is %d which is %.2f %%" %(self.full_frame_cal_num, 100*full_frame_portion))
-        print("\t Total momentum used num is ", self.momentum_used_times)
+        print("\t Total momentum used num is %d which is %.2f %%" %(self.momentum_used_times, 100*self.momentum_used_times//self.total_frame_number))
         ################################################################################################################
         
 
