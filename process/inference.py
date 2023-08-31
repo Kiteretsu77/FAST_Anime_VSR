@@ -222,11 +222,12 @@ class VideoUpScaler(object):
         '''
         ############################### Build PATH && INIT ############################################
         # Basic Path Preparation
-        video_format = input_path.split(".")[-1]
-        os.makedirs(os.path.join(root_path_, "tmp"), exist_ok=True)
-        tmp_path = os.path.join(root_path_, "tmp", "%s.%s" % (int(ttime()*1000000), video_format))
-        os.link(input_path, tmp_path)
-        objVideoreader = VideoFileClip(filename=tmp_path)
+        # video_format = input_path.split(".")[-1]
+        # os.makedirs(os.path.join(root_path_, "tmp"), exist_ok=True)
+        # tmp_path = os.path.join(root_path_, "tmp", "%s.%s" % (int(ttime()*1000000), video_format))
+        # os.link(input_path, tmp_path)
+        # objVideoreader = VideoFileClip(filename=tmp_path)
+        objVideoreader = VideoFileClip(filename=input_path)
 
         # Obtain basic video information
         total_duration = objVideoreader.duration
@@ -245,7 +246,7 @@ class VideoUpScaler(object):
         
         ################################### Build Video Writer ########################################################################################
         if has_audio:
-            tmp_audio_path = "%s.m4a" % tmp_path
+            tmp_audio_path = "output_audio.m4a" # "%s.m4a" % tmp_path
             objVideoreader.audio.write_audiofile(tmp_audio_path, codec="aac")
             # 得到的writer先给予audio然后再一帧一帧的写frame
             self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
@@ -441,7 +442,6 @@ class VideoUpScaler(object):
             os.remove(tmp_audio_path)
         
 
-        # os.remove(tmp_path)  # 把视频都暂时link到tmp文件中，最后还是要删的  <=== I forgot what is this for
         video_decode_loop_end = ttime()
         ################################################################################################################
 

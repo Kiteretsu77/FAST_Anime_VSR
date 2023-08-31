@@ -97,7 +97,7 @@ def main():
         print("We didn't find the input source {} exists!".format(input_path))
 
 
-    
+    print("We have finished processing all files!")
 
 
 if __name__ == "__main__":

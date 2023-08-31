@@ -9,6 +9,7 @@ from process.inference import VideoUpScaler
 from pathlib import Path
 from config import configuration
 from multiprocessing import Process
+import subprocess
 
 
 # import from local folder
@@ -102,10 +103,25 @@ def weight_justify(config, video_input_dir):
 
     return (model_full_name, model_partition_name)
 
+def get_length(filename):
+    result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                             "format=duration", "-of",
+                             "default=noprint_wrappers=1:nokey=1", filename],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+    return float(result.stdout)
+
 
 def split_video(input_file, parallel_num):
-    clip = VideoFileClip(input_file)
-    divide_time = math.ceil(clip.duration // parallel_num) + 1
+    ''' Split the input video (input_file) to parallel_num numbers of parts
+    Args:
+        input_file (str):   The input folder path
+        parallel_num (num): The number of parallel files we need
+    Returns:
+        configs (dict):     The configuration for the part video we take as input
+    '''
+    duration = get_length(input_file)
+    divide_time = math.ceil(duration // parallel_num) + 1
 
     # TODO: 直接拆分audio出来，这样子就不会出现中途有卡壳的情况
     # Split audio
@@ -116,12 +132,25 @@ def split_video(input_file, parallel_num):
     ffmpeg_divide_cmd = "ffmpeg -i  " + input_file +  " -f segment -an -codec copy -loglevel quiet -segment_time " + str(divide_time) + " -reset_timestamps 1 tmp/part%01d." + configuration.input_video_format
     os.system(ffmpeg_divide_cmd)
     
-    # handle config setting
+
+    # Sanity check
+    partition_num = 0 
+    for file_name in os.listdir('tmp/'):
+        name, ext = file_name.split('.')
+        if name[:4] == 'part':
+            partition_num += 1
+    # We need to ensure that the partition num is equals to the parallel num (else, there may be some bug related to ffmpeg spliting or ffprobe time detection)
+    if partition_num != parallel_num:
+        print("We get partition_num {} and parallel_num {} ".format(partition_num, parallel_num))
+        raise ValueError("We need to ensure that the partition num is equals to the parallel num")
+    # assert(partition_num == parallel_num)
+
+
+    # Handle config setting
     configs = []
     for i in range(parallel_num):
         config = {"inp_path": "tmp/part" + str(i) +"." + configuration.input_video_format, 
                     "opt_path": "tmp/part" + str(i) +"_res." + configuration.input_video_format}
-
         configs.append(config)
         
 
@@ -129,7 +158,7 @@ def split_video(input_file, parallel_num):
 
 
 def combine_video(target_output, parallel_num):
-    # write necessary ffmpeg file
+    # Write necessary ffmpeg file
     file = open("tmp/target.txt", "a")
     for i in range(parallel_num):
         file.write("file part"+str(i)+"_res."+ configuration.input_video_format+"\n")
@@ -150,6 +179,8 @@ def combine_video(target_output, parallel_num):
 
     ffmpeg_combine_cmd = "ffmpeg -f concat -i tmp/target.txt " + additional_cmd + " -loglevel quiet " + second_adidional +  target_output
     os.system(ffmpeg_combine_cmd)
+
+    print("The video is combined back from processed_parts!")
 
 
 
