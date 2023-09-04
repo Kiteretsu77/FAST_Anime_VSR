@@ -19,9 +19,9 @@ class configuration:
 
     ########################################################### Fundamental Setting #######################################################################################   
     model_name = "Real-CUGAN"                  # Supported: "Real-CUGAN" || "Real-ESRGAN" 
-    inp_path = "../videos/pokemon1.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../videos/pokemon1_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
-    rescale_factor = 0.5                          # What rescale for the input frames before doing Super-Resolution [Use this way to take less computation for SR model]
+    inp_path = "../Kiteretsu"                 # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../Kiteretsu_processed"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
+    rescale_factor = 1                          # What rescale for the input frames before doing Super-Resolution [Use this way to take less computation for SR model]
                                                 # [default 1 means no rescale] We recommend use some value like 0.5, 0.25 to avoid invalid input size in certain minor cases            
     #######################################################################################################################################################################
 
@@ -29,7 +29,7 @@ class configuration:
     # Auxiliary setting
     decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 23.98 (~24) FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
     use_tensorrt = True      # Tensorrt increase speed a lot; So, it is highly recommended to install it
-    use_rename = True       # Sometimes the video that users download may include unsupported characters, so we rename it if this one is True
+    use_rename = False       # Sometimes the video that users download may include unsupported characters, so we rename it if this one is True
 
     # Multithread and Multiprocessing setting 
     process_num = 3          # The numver of times we split the video and process totally in parallel
