@@ -30,7 +30,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 
 
 # Supported Devices and Python Version:
-1. Nvidia GPU with Cuda (Tested: 3060Ti, 3090Ti, 4090)
+1. Nvidia GPU with Cuda (Tested: 2060 Super, 3060Ti, 3090Ti, 4090)
 2. Tested on Python 3.10
 &emsp;&emsp; \
 &emsp;&emsp; 
