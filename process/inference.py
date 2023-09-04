@@ -114,9 +114,8 @@ class VideoUpScaler(object):
 
         ###################################### Important Params ##################################################################################
         self.writer = None    # Used in Call function
-        self.use_rescale = configuration.use_rescale
+        self.rescale_factor = configuration.rescale_factor
         self.scale = configuration.scale
-        self.scale_base = configuration.scale_base
         self.model_name = configuration.model_name
         self.encode_params = configuration.encode_params
         self.decode_sleep = configuration.decode_sleep
@@ -244,21 +243,15 @@ class VideoUpScaler(object):
         #############################################################################################
 
         
-        ################################### Build Video Writer ########################################################################################
+        ################################### Build Video Writer ##############################################################################################################################
         if has_audio:
             tmp_audio_path = "output_audio.m4a" # "%s.m4a" % tmp_path
             objVideoreader.audio.write_audiofile(tmp_audio_path, codec="aac")
             # 得到的writer先给予audio然后再一帧一帧的写frame
-            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
+            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale * self.rescale_factor, self.height * self.scale * self.rescale_factor), self.decode_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
         else:
-            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale, self.height * self.scale), self.decode_fps, ffmpeg_params=self.encode_params)
-        
-        # Rescale for other scale
-        if self.use_rescale:
-            # Usually, self.scale < self.scale_base
-            self.width = int(self.width * (self.scale/self.scale_base))
-            self.height = int(self.height * (self.scale/self.scale_base))
-        ##############################################################################################################################################
+            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale * self.rescale_factor, self.height * self.scale * self.rescale_factor), self.decode_fps, ffmpeg_params=self.encode_params)
+        #####################################################################################################################################################################################
 
 
 
@@ -266,9 +259,9 @@ class VideoUpScaler(object):
         ######################################### video decode loop #######################################################
         for frame_idx, frame in enumerate(objVideoreader.iter_frames(fps=self.decode_fps)): # 删掉了target fps
             
-            # Rescale the image for different setting
-            if self.use_rescale:
-                frame = cv2.resize(frame, (self.width, self.height)) # interpolation=cv2.INTER_LANCZOS4
+            # Rescale the video frame at the beginning if we want a different output resolution
+            if self.rescale_factor != 1:
+                frame = cv2.resize(frame, (int(self.width*self.rescale_factor), int(self.height*self.rescale_factor))) # interpolation=cv2.INTER_LANCZOS4
 
 
             if frame_idx % 50 == 0 or int(self.total_frame_number) == frame_idx:
@@ -285,7 +278,7 @@ class VideoUpScaler(object):
                 self.frame_write()
                 if decode_processed_diff >= 1000:
                     # Have to do this else it's possible to raise bugs
-                    print("decode too slow, needs to sleep 0.4s")
+                    print("The program decode speed is much faster than the GPU processing speed, needs to sleep 0.4s!")
                     sleep(0.4)
 
 

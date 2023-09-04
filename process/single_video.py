@@ -12,7 +12,7 @@ from multiprocessing import Process
 import subprocess
 
 
-# import from local folder
+# Import files from the local folder
 root_path_ = os.path.abspath('.')
 sys.path.append(root_path_)
 from process.utils import check_input_support
@@ -75,14 +75,14 @@ def weight_justify(config, video_input_dir):
     # Check if it is existed in supported_res
     video = VideoFileClip(video_input_dir)
     w, h = video.w, video.h
-    if config.use_rescale:
+    if config.rescale_factor != 1:
         print("Shrink target video size by half and then upscale 2")
-        w = int(w * (config.scale / config.scale_base))
-        h = int(h * (config.scale / config.scale_base))
+        w = int(w * config.rescale_factor)
+        h = int(h * config.rescale_factor)
 
 
     # Generate the TensorRT weight if needed
-    partition_height = get_partition_height(video.h)
+    partition_height = get_partition_height(h)
     if w not in supported_res or h not in supported_res[w] or partition_height not in supported_res[w]:
         print("No such orginal resolution (" + str(w) + "X" + str(h) +") weight supported in current folder!")
         print("We are going to generate the weight now!!!")

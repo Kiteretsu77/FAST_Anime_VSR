@@ -7,28 +7,29 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0"          # GPU device for inference
 
-
 class configuration:
     def __init__(self):
         pass
 
-    
     ######################################################  Frequently Edited Setting  ########################################################################################
+    
+    # Updates and Notes:
+    #   A new feature of hardware encode ("hevc_nvenc") have been added. 
+    #   If you don't feel that your GPU memory and utilization has spare resources, we recommend you to change "hevc_nvenc" to "libx264" for encode_params setting
 
-    ########################################################### Fundamental Setting ####################################################################
-    use_rescale = False                     # For Real-CUGAN, If its scale != 2, we shrink to (scale/2) * Width/Height and then do SR upscale 2
-                                            # For Real-ESRGAN, If its scale != 4, we shrink to (scale/4) * Width/Height and then do SR upscale 4
-    scale = 2                               # Real-CUGAN Supported: 2  &&  Real-ESRGAN Supported: 4 
-    model_name = "Real-CUGAN"               # Supported: "Real-CUGAN" || "Real-ESRGAN"
-    inp_path = "../White_Album_processed/11.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../White_Album_processed/11_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
-    ####################################################################################################################################################
+    ########################################################### Fundamental Setting #######################################################################################   
+    model_name = "Real-CUGAN"                  # Supported: "Real-CUGAN" || "Real-ESRGAN" 
+    inp_path = "../videos/pokemon1.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../videos/pokemon1_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
+    rescale_factor = 0.5                          # What rescale for the input frames before doing Super-Resolution [Use this way to take less computation for SR model]
+                                                # [default 1 means no rescale] We recommend use some value like 0.5, 0.25 to avoid invalid input size in certain minor cases            
+    #######################################################################################################################################################################
 
 
     # Auxiliary setting
     decode_fps = 24          # FPS you want the input source be decoded from; If = -1, use original FPS value; I recommend use 24 FPS because Anime are maked from 23.98 (~24) FPS. Thus, some 30 or more FPS anime video is falsely interpolated with unnecessary frames from my perspective. 
     use_tensorrt = True      # Tensorrt increase speed a lot; So, it is highly recommended to install it
-    use_rename = False       # Sometimes the video that users download may include unsupported characters, so we rename it if this one is True
+    use_rename = True       # Sometimes the video that users download may include unsupported characters, so we rename it if this one is True
 
     # Multithread and Multiprocessing setting 
     process_num = 3          # The numver of times we split the video and process totally in parallel
@@ -47,7 +48,6 @@ class configuration:
 
     ###########################################  General Details Setting  ################################################################
     pixel_padding = 6                                 # This value should be divisible by 3 (and 2 also)  
-    # left_mid_right_diff = [2, -2, 2]                # Generally speaking, this is not needed to modify
 
     # Architecture name or private info
     _architecture_dict = {"Real-CUGAN": "cunet", 
@@ -56,8 +56,7 @@ class configuration:
     
     _scale_base_dict = {"Real-CUGAN": 2, 
                         "Real-ESRGAN": 4}
-    scale_base = _scale_base_dict[model_name]
-
+    scale = _scale_base_dict[model_name]                                   
     ######################################################################################################################################
     
 
@@ -73,21 +72,23 @@ class configuration:
     ######################################################################################################################################
 
 
-    #########################################  Multi-threading and Encoding Setting ######################################################
+    #########################################  Multi-threading and Video Encoding Setting ######################################################
     # Original Setting: p_sleep = (0.005, 0.012) decode_sleep = 0.001
     p_sleep = (0.005, 0.015)    # Used in Multi-Threading sleep time (empirical value)
     decode_sleep = 0.001        # Used in Video decode
 
 
-    # Several recommended options for crf and preset:
+    # Several recommended options for crf (higher means lower quality) and preset (faster means lower quality but less time):
     #   High Qulity:                                    ['-crf', '19', '-preset', 'slow']
     #   Balanced:                                       ['-crf', '23', '-preset', 'medium']
     #   Lower Quality but Smaller size and Faster:      ['-crf', '28', '-preset', 'fast'] 
 
-    # If you want to save more bits (lower bitrate and lower bit/pixel):
+    # Note1: If you feel that your GPU has unused power (+unsued GPU memory) and CPU is almost occupied:
+    #   You should USE the DEFAULT ["-c:v", "hevc_nvenc"], this will increase the speed (hardware encode release CPU pressure and accelerate the speed)
+    # Note2: If you want to have a lower data size (lower bitrate and lower bits/pixel):
     #   You can use HEVC(H.265) as the encoder by appending ["-c:v", "libx265"], but the whole processing speed will be lower due to the increased complexity
 
-    encode_params = ['-crf', '23', '-preset', 'medium', "-tune", "animation", "-c:v", "libx264"]        
+    encode_params = ['-crf', '23', '-preset', 'medium', "-tune", "animation", "-c:v", "hevc_nvenc"]        
     ######################################################################################################################################
 
 
