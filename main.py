@@ -24,6 +24,9 @@ def configuration_sanity_check():
     elif configuration.model_name == "Real-ESRGAN":
         if configuration.scale != 4:
             raise NotImplementedError("Currently, Real-ESRGAN only support scale of 4")
+    elif configuration.model_name == "VCISR":
+        if configuration.scale != 2:
+            raise NotImplementedError("Currently, VCISR only support scale of 2")
     else:
         raise NotImplementedError("We don't support such model right now!")
 

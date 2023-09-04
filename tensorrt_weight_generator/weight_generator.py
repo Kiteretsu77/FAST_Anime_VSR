@@ -110,8 +110,29 @@ class Generator:
         elif configuration.architecture_name == "rrdb":
             # Process RRDB (Real-ESRGAN)
             from Real_ESRGAN.rrdb import RRDBNet
-            generator = RRDBNet()
-            model_weight = model_weight['params_ema']
+            generator = RRDBNet(scale=configuration.scale)
+            
+            if configuration.model_name == "Real-ESRGAN":
+                model_weight = model_weight['params_ema']
+            elif configuration.model_name == "VCISR":
+                model_weight = model_weight['model_state_dict']
+
+                # Rename the checkpoint weight
+                old_keys = [key for key in model_weight]
+                for old_key in old_keys:
+                    elements = old_key.split('.')
+                    
+                    # Map the old key to the new key (May need hard coding here)
+                    if elements[0] == "_orig_mod":
+                        new_key = ".".join(elements[1:])
+
+                    else:
+                        # With the same name, we need to change
+                        continue
+
+                    model_weight[new_key] = model_weight[old_key]
+                    del model_weight[old_key]
+
             input = self.rrdb_preprocess(input)
 
         else:
@@ -244,8 +265,8 @@ def check_file():
     if not os.path.exists(weight_store_path):
         print("There isn't " + weight_store_path + " under weights folder")
         network_url = {
-            "Real-CUGAN": "https://drive.google.com/u/0/uc?id=1hc1Xh_1qBkU4iGzWxkThpUa5_W9t7GZ_&export=download",
-            "Real-ESRGAN" : "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth"
+            "Real-CUGAN" : "https://drive.google.com/u/0/uc?id=1hc1Xh_1qBkU4iGzWxkThpUa5_W9t7GZ_&export=download",
+            "Real-ESRGAN" : "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
         }
         
 

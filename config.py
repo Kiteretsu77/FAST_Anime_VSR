@@ -18,12 +18,13 @@ class configuration:
     #   If you don't feel that your GPU memory and utilization has spare resources, we recommend you to change "hevc_nvenc" to "libx264" for encode_params setting
 
     ########################################################### Fundamental Setting #######################################################################################   
-    model_name = "Real-CUGAN"                  # Supported: "Real-CUGAN" || "Real-ESRGAN" 
-    inp_path = "../Kiteretsu"                 # Intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../Kiteretsu_processed"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
+    model_name = "VCISR"                  # Supported: "Real-CUGAN" || "Real-ESRGAN" || "VCISR"
+    inp_path = "../videos/pokemon1.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../videos/pokemon1_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
     rescale_factor = 1                          # What rescale for the input frames before doing Super-Resolution [Use this way to take less computation for SR model]
                                                 # [default 1 means no rescale] We recommend use some value like 0.5, 0.25 to avoid invalid input size in certain minor cases            
     #######################################################################################################################################################################
+
 
 
     # Auxiliary setting
@@ -51,12 +52,16 @@ class configuration:
 
     # Architecture name or private info
     _architecture_dict = {"Real-CUGAN": "cunet", 
-                         "Real-ESRGAN": "rrdb"}
+                          "Real-ESRGAN": "rrdb",
+                          "VCISR" : "rrdb",
+                         }
     architecture_name = _architecture_dict[model_name]
     
     _scale_base_dict = {"Real-CUGAN": 2, 
-                        "Real-ESRGAN": 4}
-    scale = _scale_base_dict[model_name]                                   
+                        "Real-ESRGAN": 4,
+                        "VCISR": 2}
+    scale = _scale_base_dict[model_name]   
+    scale_base = _scale_base_dict[model_name]
     ######################################################################################################################################
     
 
