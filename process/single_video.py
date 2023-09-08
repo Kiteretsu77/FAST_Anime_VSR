@@ -103,13 +103,16 @@ def weight_justify(config, video_input_dir):
 
     return (model_full_name, model_partition_name)
 
-def get_length(filename):
-    result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
-                             "format=duration", "-of",
-                             "default=noprint_wrappers=1:nokey=1", filename],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    return float(result.stdout)
+def get_duration(input_path):
+    objVideoreader = VideoFileClip(filename=input_path)
+    # result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+    #                          "format=duration", "-of",
+    #                          "default=noprint_wrappers=1:nokey=1", filename],
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.STDOUT)
+    # return float(result.stdout)
+
+    return objVideoreader.duration
 
 
 def split_video(input_file, parallel_num):
@@ -120,7 +123,8 @@ def split_video(input_file, parallel_num):
     Returns:
         configs (dict):     The configuration for the part video we take as input
     '''
-    duration = get_length(input_file)
+    duration = get_duration(input_file)
+    print("duration is ", duration)
     divide_time = math.ceil(duration // parallel_num) + 1
 
     # TODO: 直接拆分audio出来，这样子就不会出现中途有卡壳的情况

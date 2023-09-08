@@ -84,15 +84,15 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
     ```bash
         pip install -r requirements.txt
     ```
-    * For pytorch, please go to https://pytorch.org/get-started/locally/ to install seperately for your need
+    * For pytorch, please go to https://pytorch.org/get-started/locally/ to install seperately based on your needs
 &emsp;&emsp; 
 
 
 
 # Installation (**Windows**)：
 Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a lot & save a lot of GPU memory.
-1. Install CUDA
-2. Install Cudnn
+1. Install CUDA (e.g. https://developer.nvidia.com/cuda-downloads?)
+2. Install Cudnn (move bin\ & include\ & lib\ so far is enough)
 3. Install tensorrt (<span style="color:red">**Don't directly use python install**</span>) 
     * Please strictly Follow https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-zip 
     * After finishing these steps, you should be able to "import tensorrt" in python (starts a new window to run this)
@@ -101,6 +101,7 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
   
 4. Install torch2trt (<span style="color:red">**Don't directly use pip install torch2trt**</span>)
     * Follow https://nvidia-ai-iot.github.io/torch2trt/v0.4.0/getting_started.html   (I install **Without** plugins)
+    * In some rare cases, you may neeed to "pip install packaging" before executing its commands.
     * After installing it, you should be able to run "import torch2trt" in python (**start a new window** to run this)
 
 5. Install basic libraries for python 

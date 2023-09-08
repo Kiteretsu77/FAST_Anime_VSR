@@ -7,6 +7,7 @@ tmp/
 *.mp4
 *.mov
 *.pth
+*.json
 weights/*
 *.*.pyc
 
