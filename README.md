@@ -84,7 +84,7 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
     ```bash
         pip install -r requirements.txt
     ```
-    * For pytorch, please go to https://pytorch.org/get-started/locally/ to install seperately based on your needs
+    * Install pytorch: please go to https://pytorch.org/get-started/locally/ to install separately based on your needs
 &emsp;&emsp; 
 
 
