@@ -1,9 +1,13 @@
 # FAST Anime VSRR (Video Super-Resolution and Restoration)
-This is a repository to accelerate the Super-Resolution (**SR**) inference of Anime videos through **exploring the full potentiality of your GPU**.
-It's initially based on Real-CuGAN (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/README_EN.md) and Real-ESRGAN (https://github.com/xinntao/Real-ESRGAN). 
-I implement it in **TensorRT** version and utilized a frame division algorithm (self-designed) to accelerate it (with a video redundancy jump mechanism [similar to video compression Inter-Prediction] and a momentum mechanism). Plus, I use FFMPEG to decode a smaller FPS for faster processing but the quality drop is extremely negligible. Plus, I use multiprocessing and multithreading to completely consume all computation resources. Feel free to look at this slide [https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p] for the implementation and algorithm I have used.
+This repository is dedicated to enhancing the Super-Resolution (SR) inference process for Anime videos by fully harnessing the potential of your GPU. It is built upon the foundations of Real-CuGAN (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/README_EN.md) and Real-ESRGAN (https://github.com/xinntao/Real-ESRGAN). 
 
-In my **3060Ti** Desktop version, it can process <span style="color:red">**faster than the Real-Time Anime videos**</span>, which means that **when you finish watching the first Anime video, your second Anime SR video is already processed, and you just need to click it to continue watching the next one**.
+I've implemented the SR process using TensorRT, incorporating a custom frame division algorithm designed to accelerate it. This algorithm includes a video redundancy jump mechanism, akin to video compression Inter-Prediction, and a momentum mechanism.
+
+Additionally, I've employed FFMPEG to decode the video at a reduced frames-per-second (FPS) rate, facilitating faster processing with an almost imperceptible drop in quality. To further optimize performance, I've utilized both multiprocessing and multithreading techniques to fully utilize all available computational resources.
+
+For a more detailed understanding of the implementation and algorithms used, I invite you to refer to this presentation slide: https://docs.google.com/presentation/d/1Gxux9MdWxwpnT4nDZln8Ip_MeqalrkBesX34FVupm2A/edit#slide=id.p.
+
+In my **3060Ti** Desktop version, it can <span style="color:red">**process in Real-Time on 480P Anime videos input (Real-CUGAN)**</span>, which means that **as soon as you finish watching one Anime video, the second Anime Super-Resolution (SR) video is already processed and ready for you to continue watching with just a simple click.**.
 
 Currently, this repository supports **Real-CUGAN** (official) and a **shallow Real-ESRGAN** (6 blocks Anime Image version RRDB-Net provided by Real-ESRGAN). 
 <!-- The reason why I trained a model myself is because the original 23 blocks Real-ESRGAN is too big for Anime video and thus their inference speed is extremely slow. Based on my experiment, a 7 blocks RRDB can restore and super-resolve well on Anime videos, which only increase ~25% time than Real-CUGAN model. -->
@@ -132,9 +136,9 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
 
 
 # Future Works:
-1. Accelerate Real-ESRGAN (There is still some unkown bugs of video writing when I set nt != 0). It requires more development.
-1. MultiGPU support
-2. Provide PSNR && Visual Quality report in README.
+1. Debug use without TensorRT && when full_model_num=0
+1. MultiGPU inference support
+2. Provide PSNR && Visual Quality report in README.md
 3. Provide all repositories in English.
 4. Record a video on how to install TensorRT from scratch.
 &emsp;&emsp; \
