@@ -1,9 +1,3 @@
-# # The first three lib import is needed to be in the following order, else there is a bug of dependency appear
-# import tensorrt
-# from torch2trt import torch2trt
-# import torch 
-# ##########################################
-
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0"          # GPU device for inference
 
@@ -12,15 +6,16 @@ class configuration:
         pass
 
     ######################################################  Frequently Edited Setting  ########################################################################################
-    
-    # Updates and Notes:
-    #   A new feature of hardware encode ("hevc_nvenc") have been added. 
-    #   If you don't feel that your GPU memory and utilization has spare resources, we recommend you to change "hevc_nvenc" to "libx264" for encode_params setting
+
+    # Model exaplain: 3 models we current support: Real-CUGAN + Real-ESRGAN + VCISR
+    # Real-CUGAN:   The original model weight provided by BiliBili (from https://github.com/bilibili/ailab/tree/main)
+    # Real-ESRGAN:  Using Anime version RRDB with 6 Blocks (full model has 23 blocks) (from https://github.com/xinntao/Real-ESRGAN/blob/master/docs/model_zoo.md#for-anime-images--illustrations)
+    # VCISR:        A model I trained with my upcoming paper methods using Anime training datasets (More details will be released soon!)
 
     ########################################################### Fundamental Setting #######################################################################################   
-    model_name = "VCISR"                  # Supported: "Real-CUGAN" || "Real-ESRGAN" || "VCISR"
-    inp_path = "../videos/pokemon1.mp4"                 # Intput path (can be a single video file or a folder directory with videos)
-    opt_path = "../videos/pokemon1_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
+    model_name = "VCISR"                        # Supported: "Real-CUGAN" (base:2x) || "Real-ESRGAN" (base:4x) || "VCISR" (base:2x)
+    inp_path = "../videos/pokemon_crop.mp4"            # Intput path (can be a single video file or a folder directory with videos)
+    opt_path = "../videos/pokemon_processed.mp4"       # Output path after processing video/s of inp_path (PS: If inp_path is a folder, opt_path should also be a folder)
     rescale_factor = 1                          # What rescale for the input frames before doing Super-Resolution [Use this way to take less computation for SR model]
                                                 # [default 1 means no rescale] We recommend use some value like 0.5, 0.25 to avoid invalid input size in certain minor cases            
     #######################################################################################################################################################################
@@ -33,7 +28,7 @@ class configuration:
     use_rename = False       # Sometimes the video that users download may include unsupported characters, so we rename it if this one is True
 
     # Multithread and Multiprocessing setting 
-    process_num = 3          # The numver of times we split the video and process totally in parallel
+    process_num = 3          # The number of fully parallel processed video clips
     full_model_num = 2       # Full frame thread instance number
     nt = 2                   # Partition frame (1/3 part of a frame) instance number 
 
@@ -48,18 +43,22 @@ class configuration:
 
 
     ###########################################  General Details Setting  ################################################################
-    pixel_padding = 6                                 # This value should be divisible by 3 (and 2 also)  
+    pixel_padding = 6                                 # This value should be divisible by 6 (Usually, you don't need to change it)  
 
-    # Architecture name or private info
-    _architecture_dict = {"Real-CUGAN": "cunet", 
-                          "Real-ESRGAN": "rrdb",
-                          "VCISR" : "rrdb",
+    # Model name to Architecture name
+    _architecture_dict = {
+                            "Real-CUGAN": "cunet", 
+                            "Real-ESRGAN": "rrdb",
+                            "VCISR" : "rrdb",
                          }
     architecture_name = _architecture_dict[model_name]
     
-    _scale_base_dict = {"Real-CUGAN": 2, 
-                        "Real-ESRGAN": 4,
-                        "VCISR": 2}
+    # Default weight provided by the model
+    _scale_base_dict = {
+                            "Real-CUGAN": 2, 
+                            "Real-ESRGAN": 4,
+                            "VCISR": 2,
+                        }
     scale = _scale_base_dict[model_name]   
     scale_base = _scale_base_dict[model_name]
     ######################################################################################################################################
@@ -71,7 +70,7 @@ class configuration:
     Max_Same_Frame = 40                     # How many frames/sub-farmes at most we can jump (40-70 is ok)
     momentum_skip_crop_frame_num = 4        # Use 3 || 4 
 
-    target_saved_portion = 0.2      #相对于30fps的，如果更加低的fps，应该等比例下降,这也只是个参考值而已，会努力adjust到这个范围，但是最多就0.08-0.7还是保证了performance的
+    target_saved_portion = 0.2      # This is proposed for 30FPS; with lower FPS setting, it should be lower; however, this is a reference code, usually, 0.09-0.7 is acceptable for the performance
     Queue_hyper_param = 700         #The larger the more queue size allowed and the more cache it will have (higher memory cost, less sleep)
 
     ######################################################################################################################################
