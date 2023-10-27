@@ -196,6 +196,11 @@ class VideoUpScaler(object):
         elif configuration.model_name == "Real-CUGAN":
             from Real_CuGAN.upcunet_main import RealCuGAN_Scalar
             NN_model = RealCuGAN_Scalar
+        elif configuration.model_name == "VCISR":
+            from Real_ESRGAN.uprrdb_main import RealESRGAN_Scalar
+            NN_model = RealESRGAN_Scalar
+        else:
+            raise NotImplementedError()
 
         # Full Frame Model
         print("Full Model Preparation")
