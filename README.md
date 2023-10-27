@@ -1,7 +1,7 @@
 # FAST Anime VSRR (Video Super-Resolution and Restoration)
 This repository is dedicated to enhancing the Super-Resolution (SR) inference process for Anime videos by fully harnessing the potential of your GPU. It is built upon the foundations of Real-CuGAN (https://github.com/bilibili/ailab/blob/main/Real-CUGAN/README_EN.md) and Real-ESRGAN (https://github.com/xinntao/Real-ESRGAN). 
 
-I've implemented the SR process using TensorRT, incorporating a custom frame division algorithm designed to accelerate it. This algorithm includes a video redundancy jump mechanism, akin to video compression Inter-Prediction, and a momentum mechanism.
+I've implemented the SR process using **TensorRT**, incorporating a custom frame division algorithm designed to accelerate it. This algorithm includes a video redundancy jump mechanism, akin to video compression Inter-Prediction, and a momentum mechanism.
 
 Additionally, I've employed FFMPEG to decode the video at a reduced frames-per-second (FPS) rate, facilitating faster processing with an almost imperceptible drop in quality. To further optimize performance, I've utilized both multiprocessing and multithreading techniques to fully utilize all available computational resources.
 
@@ -31,6 +31,12 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 ![compare2](figures/processed.png)
 &emsp;&emsp; \
 &emsp;&emsp; 
+
+
+# Model supported now:
+1. **Real-CUGAN**:   The original model weight provided by BiliBili (from https://github.com/bilibili/ailab/tree/main)
+2. **Real-ESRGAN**:  Using Anime version RRDB with 6 Blocks (full model has 23 blocks) (from https://github.com/xinntao/Real-ESRGAN/blob/master/docs/model_zoo.md#for-anime-images--illustrations)
+3. **VCISR**:        A model I trained with my upcoming paper methods using Anime training datasets (More details will be released soon!)
 
 
 # Supported Devices and Python Version:
