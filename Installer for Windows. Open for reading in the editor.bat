@@ -1,3 +1,5 @@
+@rem Tested to work under Windows here are the links to the video. All files are checked, work correctly.
+@rem Video test https://terabox.com/s/1y1JaeyHPc2IvGoV-tYBobQ https://wdho.ru/6Rtz
 @rem Install python 3.10
 @rem Pre-installation steps copy files from TensorRT-8.6.0.12\onnx_graphsurgeon and TensorRT-8.6.0.12\python and place in .\
 @rem This installer supports TensorRT-8.6.0.12 for now but you can change that to whatever version you need.
