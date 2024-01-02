@@ -36,7 +36,7 @@ My ultimate goal is to directly utilize decode information in Video Codec as in 
 # Model supported now:
 1. **Real-CUGAN**:   The original model weight provided by BiliBili (from https://github.com/bilibili/ailab/tree/main)
 2. **Real-ESRGAN**:  Using Anime version RRDB with 6 Blocks (full model has 23 blocks) (from https://github.com/xinntao/Real-ESRGAN/blob/master/docs/model_zoo.md#for-anime-images--illustrations)
-3. **VCISR**:        A model I trained with my upcoming paper methods using Anime training datasets (More details will be released soon!)
+3. **VCISR**:        A model I trained with my upcoming paper methods using Anime training datasets (https://github.com/Kiteretsu77/VCISR-official)
 
 
 # Supported Devices and Python Version:
@@ -118,7 +118,7 @@ Skip step 3 and 4 if you don't want tensorrt, but they can increase the speed a 
     ```bash
         pip install -r requirements.txt
     ```
-    * For pytorch, please go to https://pytorch.org/get-started/locally/ to install seperately for your need
+    * For Pytorch, please go to https://pytorch.org/get-started/locally/ to install seperately for your need
 &emsp;&emsp; 
 
 
