@@ -245,21 +245,13 @@ class VideoUpScaler(object):
             # Use original fps as decode fps
             self.decode_fps = original_fps
         self.total_frame_number = int(self.decode_fps * (nframes/original_fps))
+
+        # Build Video Writer 
+        self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale * self.rescale_factor, self.height * self.scale * self.rescale_factor), self.decode_fps, ffmpeg_params=self.encode_params)
         #############################################################################################
 
         
-        ################################### Build Video Writer ##############################################################################################################################
-        if has_audio:
-            tmp_audio_path = "output_audio.m4a" # "%s.m4a" % tmp_path
-            objVideoreader.audio.write_audiofile(tmp_audio_path, codec="aac")
-            # 得到的writer先给予audio然后再一帧一帧的写frame
-            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale * self.rescale_factor, self.height * self.scale * self.rescale_factor), self.decode_fps, ffmpeg_params=self.encode_params, audiofile=tmp_audio_path)
-        else:
-            self.writer = FFMPEG_VideoWriter(output_path, (self.width * self.scale * self.rescale_factor, self.height * self.scale * self.rescale_factor), self.decode_fps, ffmpeg_params=self.encode_params)
-        #####################################################################################################################################################################################
-
-
-
+        
         video_decode_loop_start = ttime()
         ######################################### video decode loop #######################################################
         for frame_idx, frame in enumerate(objVideoreader.iter_frames(fps=self.decode_fps)): # 删掉了target fps
@@ -436,8 +428,6 @@ class VideoUpScaler(object):
 
         # close writer to save all stuff
         self.writer.close()
-        if has_audio:
-            os.remove(tmp_audio_path)
         
 
         video_decode_loop_end = ttime()
